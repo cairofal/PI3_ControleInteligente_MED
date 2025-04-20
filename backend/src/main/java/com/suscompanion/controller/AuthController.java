@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 /**
- * Controller for authentication operations.
+ * Controller for authentication operations. =)
  */
 @RestController
 @RequestMapping("/auth")

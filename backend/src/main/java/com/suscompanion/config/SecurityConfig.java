@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 /**
  * Security configuration for the application.
+ * jesus... this one was hard to get it.
  */
 @Configuration
 @EnableWebSecurity
@@ -43,7 +44,6 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/auth/register",
                     "/auth/**",
                     "/api-docs/**",
                     "/v3/api-docs/**",
