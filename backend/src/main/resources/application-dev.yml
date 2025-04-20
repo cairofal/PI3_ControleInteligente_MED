@@ -1,10 +1,11 @@
 # Development profile configuration
 spring:
   # Database configuration for development
+
   datasource:
-    url: jdbc:postgresql://localhost:3030/suscomp
-    username: postgres
-    password: 729286
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   
   # JPA/Hibernate configuration for development
   jpa:
