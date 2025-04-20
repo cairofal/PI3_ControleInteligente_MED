@@ -49,15 +49,14 @@ API para gerenciamento de medicamentos, receitas médicas e monitoramento de sa�
 
 ## Variáveis de Ambiente
 
-| Variável | Descrição | Valor Padrão |
-|----------|-----------|------|
-| `PORT` | Porta da aplicação | 8080 |
-| `DB_URL` | URL de conexão com o banco de dados | |
-| `DB_USERNAME` | Usuário do banco de dados |  |
-| `DB_PASSWORD` | Senha do banco de dados |  |
-| `JWT_SECRET` | Chave secreta para assinatura de tokens JWT |  |
-| `JWT_EXPIRATION` | Tempo de expiração do token JWT em milissegundos | 86400000 (24 horas) |
-| `JWT_REFRESH_EXPIRATION` | Tempo de expiração do refresh token em milissegundos | 604800000 (7 dias) |
+A aplicação utiliza um arquivo `.env` para configurar as variáveis de ambiente. Um arquivo `.env` de exemplo foi criado na raiz do projeto com valores padrão.
+
+Para usar o arquivo `.env`:
+
+1. Copie o arquivo `.env` para seu ambiente local (ele já está no .gitignore)
+2. Modifique os valores conforme necessário para seu ambiente
+3. O Docker Compose carregará automaticamente as variáveis do arquivo `.env`
+
 
 ## Endpoints Principais
 
@@ -152,4 +151,3 @@ sus-companion-api/
     ├── Dockerfile          # Para construir a imagem da aplicação
     └── docker-compose.yml  # Configuração para desenvolvimento local
 ```
-
