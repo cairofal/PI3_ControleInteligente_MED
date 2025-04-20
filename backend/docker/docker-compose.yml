@@ -11,9 +11,9 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - DB_URL=jdbc:postgresql://db:5432/suscomp
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=729286
-      - JWT_SECRET=5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437
+      - DB_USERNAME=
+      - DB_PASSWORD=
+      - JWT_SECRET=
     depends_on:
       db:
         condition: service_healthy
@@ -26,8 +26,8 @@ services:
       - "3030:5432"
     environment:
       - POSTGRES_DB=suscomp
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=729286
+      - POSTGRES_USER=
+      - POSTGRES_PASSWORD=
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
