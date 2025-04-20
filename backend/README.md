@@ -15,7 +15,7 @@ API para gerenciamento de medicamentos, receitas médicas e monitoramento de sa�
 ## Requisitos
 
 - Java 21 JDK
-- Docker e Docker Compose (db)
+- Docker e Docker Compose (para a db)
 - Maven
 
 ## Configuração e Execução
@@ -23,10 +23,6 @@ API para gerenciamento de medicamentos, receitas médicas e monitoramento de sa�
 ### Usando Docker Compose
 
 1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/sus-companion-api.git
-   cd sus-companion-api
-   ```
 
 2. Execute a aplicação com Docker Compose:
    ```bash
@@ -38,34 +34,28 @@ API para gerenciamento de medicamentos, receitas médicas e monitoramento de sa�
 
 ### Execução Local
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/sus-companion-api.git
-   cd sus-companion-api
-   ```
-
-2. Inicie o PostgreSQL com Docker:
+1. Inicie o PostgreSQL com Docker:
    ```bash
    docker-compose -f docker/docker-compose.yml up -d db
    ```
 
-3. Execute a aplicação:
+2. Execute a aplicação:
    ```bash
    ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
    ```
 
-4. A API estará disponível em: http://localhost:8080/api/v1
-5. A documentação Swagger estará disponível em: http://localhost:8080/api/v1/swagger-ui.html
+3. A API estará disponível em: http://localhost:8080/api/v1
+4. A documentação Swagger estará disponível em: http://localhost:8080/api/v1/swagger-ui.html
 
 ## Variáveis de Ambiente
 
 | Variável | Descrição | Valor Padrão |
-|----------|-----------|--------------|
+|----------|-----------|------|
 | `PORT` | Porta da aplicação | 8080 |
-| `DB_URL` | URL de conexão com o banco de dados | jdbc:postgresql://localhost:3030/suscomp |
-| `DB_USERNAME` | Usuário do banco de dados | postgres |
-| `DB_PASSWORD` | Senha do banco de dados | 729286 |
-| `JWT_SECRET` | Chave secreta para assinatura de tokens JWT | 5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437 |
+| `DB_URL` | URL de conexão com o banco de dados | |
+| `DB_USERNAME` | Usuário do banco de dados |  |
+| `DB_PASSWORD` | Senha do banco de dados |  |
+| `JWT_SECRET` | Chave secreta para assinatura de tokens JWT |  |
 | `JWT_EXPIRATION` | Tempo de expiração do token JWT em milissegundos | 86400000 (24 horas) |
 | `JWT_REFRESH_EXPIRATION` | Tempo de expiração do refresh token em milissegundos | 604800000 (7 dias) |
 
