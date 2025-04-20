@@ -1,0 +1,32 @@
+# Development profile configuration
+spring:
+  # Database configuration for development
+  datasource:
+    url: jdbc:postgresql://localhost:3030/suscomp
+    username: postgres
+    password: 729286
+  
+  # JPA/Hibernate configuration for development
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+  
+  # Flyway configuration for development
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+# Logging configuration for development
+logging:
+  level:
+    root: INFO
+    com.suscompanion: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

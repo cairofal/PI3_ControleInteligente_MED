@@ -1,0 +1,70 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.logs
+*.log
+hs_err_pid*
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+maven_debug.log
+
+# Spring Boot
+
+*.gz
+*.tmp
+logs/
+spring.log
+
+# IDE - IntelliJ IDEA
+.idea/
+.junie/
+*.iml
+*.iws
+*.ipr
+*.ids
+*.orig
+out/
+
+# IDE - Eclipse
+.classpath
+.project
+.settings/
+.metadata/
+bin/
+
+# IDE - VS Code
+.vscode/
+.code-workspace
+
+# OS specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Application specific
+application-local.yml
+application-local.properties
+*.env
+
+# Docker
+.env
+docker-compose.override.yml
+
+# Misc
+*.swp
+*.swo
+*~
+.nfs*
