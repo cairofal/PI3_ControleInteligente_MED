@@ -26,9 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Controller for health monitoring operations.
- */
+
 @RestController
 @RequestMapping("/saude")
 @RequiredArgsConstructor
@@ -39,11 +37,7 @@ public class MonitoramentoSaudeController {
     private final MonitoramentoSaudeService monitoramentoSaudeService;
     private final UsuarioService usuarioService;
 
-    /**
-     * Get all health monitoring records for the current user.
-     * @param pageable pagination information
-     * @return a page of health monitoring record DTOs
-     */
+
     @GetMapping
     @Operation(summary = "Listar registros de saúde", description = "Retorna todos os registros de saúde do usuário autenticado")
     public ResponseEntity<Page<MonitoramentoSaudeDTO>> getAll(@PageableDefault(size = 20) Pageable pageable) {
@@ -51,11 +45,7 @@ public class MonitoramentoSaudeController {
         return ResponseEntity.ok(monitoramentoSaudeService.getAllByUsuario(usuarioId, pageable));
     }
 
-    /**
-     * Get a health monitoring record by ID for the current user.
-     * @param id the health monitoring record ID
-     * @return the health monitoring record DTO
-     */
+
     @GetMapping("/{id}")
     @Operation(summary = "Obter registro de saúde por ID", description = "Retorna um registro de saúde específico do usuário autenticado")
     public ResponseEntity<MonitoramentoSaudeDTO> getById(@PathVariable UUID id) {
@@ -63,11 +53,7 @@ public class MonitoramentoSaudeController {
         return ResponseEntity.ok(monitoramentoSaudeService.getByIdAndUsuario(id, usuarioId));
     }
 
-    /**
-     * Create a new health monitoring record for the current user.
-     * @param request the health monitoring record creation request
-     * @return the created health monitoring record DTO
-     */
+
     @PostMapping
     @Operation(summary = "Adicionar registro de saúde", description = "Adiciona um novo registro de saúde para o usuário autenticado")
     public ResponseEntity<MonitoramentoSaudeDTO> create(@Valid @RequestBody MonitoramentoSaudeRequest request) {
@@ -83,12 +69,7 @@ public class MonitoramentoSaudeController {
         return ResponseEntity.created(location).body(monitoramento);
     }
 
-    /**
-     * Update a health monitoring record for the current user.
-     * @param id the health monitoring record ID
-     * @param request the health monitoring record update request
-     * @return the updated health monitoring record DTO
-     */
+
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar registro de saúde", description = "Atualiza um registro de saúde específico do usuário autenticado")
     public ResponseEntity<MonitoramentoSaudeDTO> update(@PathVariable UUID id, @Valid @RequestBody MonitoramentoSaudeRequest request) {
@@ -96,11 +77,7 @@ public class MonitoramentoSaudeController {
         return ResponseEntity.ok(monitoramentoSaudeService.update(id, usuarioId, request));
     }
 
-    /**
-     * Delete a health monitoring record for the current user.
-     * @param id the health monitoring record ID
-     * @return a response entity with no content
-     */
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir registro de saúde", description = "Exclui um registro de saúde específico do usuário autenticado")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
@@ -109,12 +86,7 @@ public class MonitoramentoSaudeController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Get health monitoring records by type for the current user.
-     * @param tipo the type of health monitoring
-     * @param pageable pagination information
-     * @return a page of health monitoring record DTOs
-     */
+
     @GetMapping("/tipo/{tipo}")
     @Operation(summary = "Listar registros por tipo", description = "Retorna todos os registros de saúde de um tipo específico do usuário autenticado")
     public ResponseEntity<Page<MonitoramentoSaudeDTO>> getByTipo(
@@ -124,11 +96,7 @@ public class MonitoramentoSaudeController {
         return ResponseEntity.ok(monitoramentoSaudeService.getByTipo(tipo, usuarioId, pageable));
     }
 
-    /**
-     * Get the latest health monitoring records for the current user.
-     * @param limit the maximum number of records to return (default: 10)
-     * @return a list of the latest health monitoring record DTOs
-     */
+
     @GetMapping("/ultimos-registros")
     @Operation(summary = "Obter últimos registros", description = "Retorna os últimos registros de saúde do usuário autenticado")
     public ResponseEntity<List<MonitoramentoSaudeDTO>> getUltimosRegistros(@RequestParam(defaultValue = "10") int limit) {
@@ -136,13 +104,7 @@ public class MonitoramentoSaudeController {
         return ResponseEntity.ok(monitoramentoSaudeService.getUltimosRegistros(usuarioId, limit));
     }
 
-    /**
-     * Get health monitoring records within a date range for the current user.
-     * @param inicio the start date
-     * @param fim the end date
-     * @param pageable pagination information
-     * @return a page of health monitoring record DTOs within the date range
-     */
+
     @GetMapping("/periodo")
     @Operation(summary = "Listar registros por período", description = "Retorna todos os registros de saúde dentro de um período específico do usuário autenticado")
     public ResponseEntity<Page<MonitoramentoSaudeDTO>> getByPeriodo(
@@ -153,10 +115,7 @@ public class MonitoramentoSaudeController {
         return ResponseEntity.ok(monitoramentoSaudeService.getByDataRegistroBetween(usuarioId, inicio, fim, pageable));
     }
 
-    /**
-     * Get the current user ID.
-     * @return the current user ID
-     */
+
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
