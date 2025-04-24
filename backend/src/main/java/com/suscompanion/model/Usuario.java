@@ -1,5 +1,6 @@
 package com.suscompanion.model;
 
+import com.suscompanion.annotations.CPF;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -12,9 +13,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-/**
- * Entity representing a user/patient in the system.
- */
 @Entity
 @Table(name = "usuarios")
 @Data
@@ -36,7 +34,8 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Pattern(regexp = "^\\d{11}$", message = "CPF deve conter 11 dígitos numéricos")
+    //@Pattern(regexp = "^\\d{11}$", message = "CPF deve conter 11 dígitos numéricos")
+    @CPF(message = "CPF deve ser um número válido.")
     @Column(unique = true, length = 11)
     private String cpf;
 
