@@ -35,11 +35,6 @@ public class MedicamentoController {
     private final MedicamentoService medicamentoService;
     private final UsuarioService usuarioService;
 
-    /**
-     * Get all medications for the current user.
-     * @param pageable pagination information
-     * @return a page of medication DTOs
-     */
     @GetMapping
     @Operation(summary = "Listar medicamentos", description = "Retorna todos os medicamentos do usuário autenticado")
     public ResponseEntity<Page<MedicamentoDTO>> getAll(@PageableDefault(size = 20) Pageable pageable) {
@@ -47,11 +42,7 @@ public class MedicamentoController {
         return ResponseEntity.ok(medicamentoService.getAllByUsuario(usuarioId, pageable));
     }
 
-    /**
-     * Get a medication by ID for the current user.
-     * @param id the medication ID
-     * @return the medication DTO
-     */
+
     @GetMapping("/{id}")
     @Operation(summary = "Obter medicamento por ID", description = "Retorna um medicamento específico do usuário autenticado")
     public ResponseEntity<MedicamentoDTO> getById(@PathVariable UUID id) {
@@ -59,11 +50,7 @@ public class MedicamentoController {
         return ResponseEntity.ok(medicamentoService.getByIdAndUsuario(id, usuarioId));
     }
 
-    /**
-     * Create a new medication for the current user.
-     * @param request the medication creation request
-     * @return the created medication DTO
-     */
+
     @PostMapping
     @Operation(summary = "Cadastrar medicamento", description = "Cadastra um novo medicamento para o usuário autenticado")
     public ResponseEntity<MedicamentoDTO> create(@Valid @RequestBody MedicamentoRequest request) {
@@ -79,12 +66,7 @@ public class MedicamentoController {
         return ResponseEntity.created(location).body(medicamento);
     }
 
-    /**
-     * Update a medication for the current user.
-     * @param id the medication ID
-     * @param request the medication update request
-     * @return the updated medication DTO
-     */
+
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar medicamento", description = "Atualiza um medicamento específico do usuário autenticado")
     public ResponseEntity<MedicamentoDTO> update(@PathVariable UUID id, @Valid @RequestBody MedicamentoRequest request) {
@@ -92,11 +74,7 @@ public class MedicamentoController {
         return ResponseEntity.ok(medicamentoService.update(id, usuarioId, request));
     }
 
-    /**
-     * Delete a medication for the current user.
-     * @param id the medication ID
-     * @return a response entity with no content
-     */
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir medicamento", description = "Exclui um medicamento específico do usuário autenticado")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
@@ -105,12 +83,7 @@ public class MedicamentoController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Search medications by name for the current user.
-     * @param nome the name to search for
-     * @param pageable pagination information
-     * @return a page of medication DTOs
-     */
+
     @GetMapping("/search")
     @Operation(summary = "Buscar medicamentos por nome", description = "Busca medicamentos pelo nome para o usuário autenticado")
     public ResponseEntity<Page<MedicamentoDTO>> searchByNome(
@@ -120,10 +93,7 @@ public class MedicamentoController {
         return ResponseEntity.ok(medicamentoService.searchByNome(nome, usuarioId, pageable));
     }
 
-    /**
-     * Get the current user ID.
-     * @return the current user ID
-     */
+
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();

@@ -11,13 +11,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/**
- * DTO for user creation and update requests.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UsuarioRequest {
+public class  UsuarioRequest {
 
     @NotBlank(message = "Nome é obrigatório")
     @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")

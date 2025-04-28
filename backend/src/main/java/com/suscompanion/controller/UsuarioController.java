@@ -15,9 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-/**
- * Controller for user operations.
- */
+
 @RestController
 @RequestMapping("/usuarios")
 @RequiredArgsConstructor
@@ -27,10 +25,6 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    /**
-     * Get the current user.
-     * @return the current user DTO
-     */
     @GetMapping("/me")
     @Operation(summary = "Obter usuário atual", description = "Retorna os dados do usuário autenticado")
     public ResponseEntity<UsuarioDTO> getCurrentUser() {
@@ -39,23 +33,14 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.getByEmail(email));
     }
 
-    /**
-     * Get a user by ID.
-     * @param id the user ID
-     * @return the user DTO
-     */
+
     @GetMapping("/{id}")
     @Operation(summary = "Obter usuário por ID", description = "Retorna os dados de um usuário específico")
     public ResponseEntity<UsuarioDTO> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(usuarioService.getById(id));
     }
 
-    /**
-     * Update a user.
-     * @param id the user ID
-     * @param request the user update request
-     * @return the updated user DTO
-     */
+
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar usuário", description = "Atualiza os dados de um usuário específico")
     public ResponseEntity<UsuarioDTO> update(@PathVariable UUID id, @Valid @RequestBody UsuarioRequest request) {
@@ -71,11 +56,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.update(id, request));
     }
 
-    /**
-     * Delete a user.
-     * @param id the user ID
-     * @return a response entity with no content
-     */
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir usuário", description = "Exclui um usuário específico")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {

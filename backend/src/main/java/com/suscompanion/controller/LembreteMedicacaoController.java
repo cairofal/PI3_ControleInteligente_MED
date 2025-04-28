@@ -23,9 +23,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Controller for medication reminder operations.
- */
+
 @RestController
 @RequestMapping("/lembretes")
 @RequiredArgsConstructor
@@ -36,11 +34,7 @@ public class LembreteMedicacaoController {
     private final LembreteMedicacaoService lembreteMedicacaoService;
     private final UsuarioService usuarioService;
 
-    /**
-     * Get all medication reminders for the current user.
-     * @param pageable pagination information
-     * @return a page of medication reminder DTOs
-     */
+
     @GetMapping
     @Operation(summary = "Listar lembretes", description = "Retorna todos os lembretes de medicação do usuário autenticado")
     public ResponseEntity<Page<LembreteMedicacaoDTO>> getAll(@PageableDefault(size = 20) Pageable pageable) {
@@ -48,11 +42,7 @@ public class LembreteMedicacaoController {
         return ResponseEntity.ok(lembreteMedicacaoService.getAllByUsuario(usuarioId, pageable));
     }
 
-    /**
-     * Get a medication reminder by ID for the current user.
-     * @param id the medication reminder ID
-     * @return the medication reminder DTO
-     */
+
     @GetMapping("/{id}")
     @Operation(summary = "Obter lembrete por ID", description = "Retorna um lembrete de medicação específico do usuário autenticado")
     public ResponseEntity<LembreteMedicacaoDTO> getById(@PathVariable UUID id) {
@@ -60,11 +50,7 @@ public class LembreteMedicacaoController {
         return ResponseEntity.ok(lembreteMedicacaoService.getByIdAndUsuario(id, usuarioId));
     }
 
-    /**
-     * Create a new medication reminder for the current user.
-     * @param request the medication reminder creation request
-     * @return the created medication reminder DTO
-     */
+
     @PostMapping
     @Operation(summary = "Criar lembrete", description = "Cria um novo lembrete de medicação para o usuário autenticado")
     public ResponseEntity<LembreteMedicacaoDTO> create(@Valid @RequestBody LembreteMedicacaoRequest request) {
@@ -80,12 +66,7 @@ public class LembreteMedicacaoController {
         return ResponseEntity.created(location).body(lembrete);
     }
 
-    /**
-     * Update a medication reminder for the current user.
-     * @param id the medication reminder ID
-     * @param request the medication reminder update request
-     * @return the updated medication reminder DTO
-     */
+
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar lembrete", description = "Atualiza um lembrete de medicação específico do usuário autenticado")
     public ResponseEntity<LembreteMedicacaoDTO> update(@PathVariable UUID id, @Valid @RequestBody LembreteMedicacaoRequest request) {
@@ -93,11 +74,7 @@ public class LembreteMedicacaoController {
         return ResponseEntity.ok(lembreteMedicacaoService.update(id, usuarioId, request));
     }
 
-    /**
-     * Delete a medication reminder for the current user.
-     * @param id the medication reminder ID
-     * @return a response entity with no content
-     */
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Excluir lembrete", description = "Exclui um lembrete de medicação específico do usuário autenticado")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
@@ -106,10 +83,7 @@ public class LembreteMedicacaoController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Get medication reminders for today for the current user.
-     * @return a list of medication reminder DTOs for today
-     */
+
     @GetMapping("/hoje")
     @Operation(summary = "Listar lembretes para hoje", description = "Retorna todos os lembretes de medicação para hoje do usuário autenticado")
     public ResponseEntity<List<LembreteMedicacaoDTO>> getLembretesHoje() {
@@ -117,10 +91,6 @@ public class LembreteMedicacaoController {
         return ResponseEntity.ok(lembreteMedicacaoService.getLembretesHoje(usuarioId));
     }
 
-    /**
-     * Get active medication reminders for the current user.
-     * @return a list of active medication reminder DTOs
-     */
     @GetMapping("/ativos")
     @Operation(summary = "Listar lembretes ativos", description = "Retorna todos os lembretes de medicação ativos do usuário autenticado")
     public ResponseEntity<List<LembreteMedicacaoDTO>> getLembretesAtivos() {
@@ -128,10 +98,7 @@ public class LembreteMedicacaoController {
         return ResponseEntity.ok(lembreteMedicacaoService.getLembretesAtivos(usuarioId));
     }
 
-    /**
-     * Get the current user ID.
-     * @return the current user ID
-     */
+
     private UUID getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
