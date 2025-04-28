@@ -10,6 +10,14 @@ Conta atualmente com uma api RestFUL (SUS Companion API) que servirá tanto o fr
 
 API para gerenciamento de medicamentos, receitas médicas e monitoramento de saúde para pacientes do SUS.
 
+### Tecnologias Utilizadas (Frontend)
+
+- React JS
+
+### Tecnologias Utilizadas (Mobile)
+
+- Kotlin 
+
 ### Tecnologias Utilizadas (Backend)
 
 - Java 21
