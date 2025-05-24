@@ -3,74 +3,39 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config';
 import Header from '../components/Header';
 
-function Medicos({ isLoggedIn, handleLogout }) {
-  const [medicos, setMedicos] = useState([]);
-  const [especialidades, setEspecialidades] = useState([]);
+function Pacientes({ isLoggedIn, handleLogout }) {
+  const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
-    crm: '',
+    cpf: '',
+    dataNascimento: '',
     telefone: '',
     email: '',
-    especialidades: []
+    endereco: ''
   });
   const [editingId, setEditingId] = useState(null);
 
-  // Lista padrão de especialidades médicas
-  const especialidadesPadrao = [
-    'Clínico Geral',
-    'Cardiologia',
-    'Dermatologia',
-    'Endocrinologia',
-    'Gastroenterologia',
-    'Ginecologia',
-    'Neurologia',
-    'Oftalmologia',
-    'Ortopedia',
-    'Pediatria',
-    'Psiquiatria',
-    'Urologia',
-    'Oncologia',
-    'Reumatologia',
-    'Otorrinolaringologia'
-  ];
-
   useEffect(() => {
-    fetchMedicos();
-    fetchEspecialidades();
+    fetchPacientes();
   }, []);
 
-  const fetchMedicos = async () => {
+  const fetchPacientes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/medicos`, {
+      const response = await axios.get(`${API_BASE_URL}/pacientes`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      setMedicos(response.data);
+      setPacientes(response.data);
       setLoading(false);
     } catch (error) {
-      console.error('Erro ao buscar médicos:', error);
-      setError('Erro ao carregar médicos');
+      console.error('Erro ao buscar pacientes:', error);
+      setError('Erro ao carregar pacientes');
       setLoading(false);
-    }
-  };
-
-  const fetchEspecialidades = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/especialidades`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setEspecialidades(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar especialidades, usando lista padrão:', error);
-      setEspecialidades(especialidadesPadrao);
     }
   };
 
@@ -82,43 +47,21 @@ function Medicos({ isLoggedIn, handleLogout }) {
     });
   };
 
-  const handleEspecialidadeChange = (e) => {
-    const { value, checked } = e.target;
-    let novasEspecialidades = [...formData.especialidades];
-    
-    if (checked) {
-      novasEspecialidades.push(value);
-    } else {
-      novasEspecialidades = novasEspecialidades.filter(esp => esp !== value);
-    }
-    
-    setFormData({
-      ...formData,
-      especialidades: novasEspecialidades
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
       
-      // Verifica se pelo menos uma especialidade foi selecionada
-      if (formData.especialidades.length === 0) {
-        setError('Selecione pelo menos uma especialidade');
-        return;
-      }
-      
       if (editingId) {
-        // Atualizar médico existente
-        await axios.put(`${API_BASE_URL}/medicos/${editingId}`, formData, {
+        // Atualizar paciente existente
+        await axios.put(`${API_BASE_URL}/pacientes/${editingId}`, formData, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
       } else {
-        // Criar novo médico
-        await axios.post(`${API_BASE_URL}/medicos`, formData, {
+        // Criar novo paciente
+        await axios.post(`${API_BASE_URL}/pacientes`, formData, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -129,45 +72,46 @@ function Medicos({ isLoggedIn, handleLogout }) {
       setShowForm(false);
       setFormData({
         nome: '',
-        crm: '',
+        cpf: '',
+        dataNascimento: '',
         telefone: '',
         email: '',
-        especialidades: []
+        endereco: ''
       });
       setEditingId(null);
-      fetchMedicos();
-      setError(null);
+      fetchPacientes();
     } catch (error) {
-      console.error('Erro ao salvar médico:', error);
-      setError('Erro ao salvar médico');
+      console.error('Erro ao salvar paciente:', error);
+      setError('Erro ao salvar paciente');
     }
   };
 
-  const handleEdit = (medico) => {
+  const handleEdit = (paciente) => {
     setFormData({
-      nome: medico.nome,
-      crm: medico.crm,
-      telefone: medico.telefone,
-      email: medico.email,
-      especialidades: medico.especialidades || []
+      nome: paciente.nome,
+      cpf: paciente.cpf,
+      dataNascimento: paciente.dataNascimento,
+      telefone: paciente.telefone,
+      email: paciente.email,
+      endereco: paciente.endereco
     });
-    setEditingId(medico.id);
+    setEditingId(paciente.id);
     setShowForm(true);
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este médico?')) {
+    if (window.confirm('Tem certeza que deseja excluir este paciente?')) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`${API_BASE_URL}/medicos/${id}`, {
+        await axios.delete(`${API_BASE_URL}/pacientes/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        fetchMedicos();
+        fetchPacientes();
       } catch (error) {
-        console.error('Erro ao excluir médico:', error);
-        setError('Erro ao excluir médico');
+        console.error('Erro ao excluir paciente:', error);
+        setError('Erro ao excluir paciente');
       }
     }
   };
@@ -176,7 +120,7 @@ function Medicos({ isLoggedIn, handleLogout }) {
     <div>
       <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <main style={styles.main}>
-        <h1 style={styles.title}>Cadastro de Médicos</h1>
+        <h1 style={styles.title}>Cadastro de Pacientes</h1>
         
         <button 
           style={styles.addButton}
@@ -186,21 +130,22 @@ function Medicos({ isLoggedIn, handleLogout }) {
               setEditingId(null);
               setFormData({
                 nome: '',
-                crm: '',
+                cpf: '',
+                dataNascimento: '',
                 telefone: '',
                 email: '',
-                especialidades: []
+                endereco: ''
               });
             }
           }}
         >
-          {showForm ? 'Cancelar' : '+ Adicionar Médico'}
+          {showForm ? 'Cancelar' : '+ Adicionar Paciente'}
         </button>
 
         {showForm && (
           <form style={styles.form} onSubmit={handleSubmit}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Nome Completo:</label>
+              <label style={styles.label}>Nome:</label>
               <input
                 type="text"
                 name="nome"
@@ -208,20 +153,30 @@ function Medicos({ isLoggedIn, handleLogout }) {
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="Ex: Dr. João da Silva"
               />
             </div>
             
             <div style={styles.formGroup}>
-              <label style={styles.label}>CRM:</label>
+              <label style={styles.label}>CPF:</label>
               <input
                 type="text"
-                name="crm"
-                value={formData.crm}
+                name="cpf"
+                value={formData.cpf}
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="Número de registro no CRM"
+              />
+            </div>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Data de Nascimento:</label>
+              <input
+                type="date"
+                name="dataNascimento"
+                value={formData.dataNascimento}
+                onChange={handleInputChange}
+                style={styles.input}
+                required
               />
             </div>
             
@@ -234,7 +189,6 @@ function Medicos({ isLoggedIn, handleLogout }) {
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="(00) 00000-0000"
               />
             </div>
             
@@ -246,29 +200,18 @@ function Medicos({ isLoggedIn, handleLogout }) {
                 value={formData.email}
                 onChange={handleInputChange}
                 style={styles.input}
-                placeholder="email@exemplo.com"
               />
             </div>
             
             <div style={styles.formGroup}>
-              <label style={styles.label}>Especialidades:</label>
-              <div style={styles.especialidadesContainer}>
-                {especialidades.map((especialidade) => (
-                  <div key={especialidade} style={styles.especialidadeItem}>
-                    <input
-                      type="checkbox"
-                      id={`esp-${especialidade}`}
-                      value={especialidade}
-                      checked={formData.especialidades.includes(especialidade)}
-                      onChange={handleEspecialidadeChange}
-                      style={styles.checkbox}
-                    />
-                    <label htmlFor={`esp-${especialidade}`} style={styles.especialidadeLabel}>
-                      {especialidade}
-                    </label>
-                  </div>
-                ))}
-              </div>
+              <label style={styles.label}>Endereço:</label>
+              <input
+                type="text"
+                name="endereco"
+                value={formData.endereco}
+                onChange={handleInputChange}
+                style={styles.input}
+              />
             </div>
             
             <button type="submit" style={styles.submitButton}>
@@ -287,32 +230,30 @@ function Medicos({ isLoggedIn, handleLogout }) {
               <thead>
                 <tr>
                   <th>Nome</th>
-                  <th>CRM</th>
+                  <th>CPF</th>
+                  <th>Nascimento</th>
                   <th>Telefone</th>
-                  <th>Especialidades</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {medicos.length > 0 ? (
-                  medicos.map((medico) => (
-                    <tr key={medico.id}>
-                      <td>Dr. {medico.nome}</td>
-                      <td>{medico.crm}</td>
-                      <td>{medico.telefone}</td>
-                      <td>
-                        {medico.especialidades?.join(', ') || 'Nenhuma especialidade cadastrada'}
-                      </td>
+                {pacientes.length > 0 ? (
+                  pacientes.map((paciente) => (
+                    <tr key={paciente.id}>
+                      <td>{paciente.nome}</td>
+                      <td>{paciente.cpf}</td>
+                      <td>{new Date(paciente.dataNascimento).toLocaleDateString()}</td>
+                      <td>{paciente.telefone}</td>
                       <td style={styles.actions}>
                         <button 
                           style={styles.editButton}
-                          onClick={() => handleEdit(medico)}
+                          onClick={() => handleEdit(paciente)}
                         >
                           Editar
                         </button>
                         <button 
                           style={styles.deleteButton}
-                          onClick={() => handleDelete(medico.id)}
+                          onClick={() => handleDelete(paciente.id)}
                         >
                           Excluir
                         </button>
@@ -321,7 +262,7 @@ function Medicos({ isLoggedIn, handleLogout }) {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" style={styles.noData}>Nenhum médico cadastrado</td>
+                    <td colSpan="5" style={styles.noData}>Nenhum paciente cadastrado</td>
                   </tr>
                 )}
               </tbody>
@@ -381,26 +322,6 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px',
     fontSize: '1rem',
-  },
-  especialidadesContainer: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '10px',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    maxHeight: '200px',
-    overflowY: 'auto',
-  },
-  especialidadeItem: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  checkbox: {
-    marginRight: '8px',
-  },
-  especialidadeLabel: {
-    cursor: 'pointer',
   },
   submitButton: {
     backgroundColor: '#2196F3',
@@ -474,4 +395,4 @@ const styles = {
   },
 };
 
-export default Medicos;
+export default Pacientes;

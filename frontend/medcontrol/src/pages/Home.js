@@ -6,9 +6,9 @@ function Home({ isLoggedIn, handleLogout }) {
       <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <main style={styles.main}>
         <section style={styles.hero}>
-          <h1 style={styles.heroTitle}>Bem-vindo à nossa plataforma</h1>
+          <h1 style={styles.heroTitle}>Bem-vindo(a) ao sistema de Controle Inteligente para Tratamentos Médicos</h1>
           <p style={styles.heroText}>
-            Solução completa para suas necessidades. Faça login para acessar sua conta.
+            Solução completa para o acompanhamento de tratamentos médicos. Faça login para acessar sua conta.
           </p>
         </section>
       </main>

@@ -18,7 +18,7 @@ function Dashboard({ isLoggedIn, handleLogout, user }) {
     },
     {
       id: 2,
-      title: 'Medicamentos',
+      title: 'Cadastro de Medicamentos',
       icon: '💊',
       path: '/medicamentos'
     },
