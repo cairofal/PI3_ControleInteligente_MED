@@ -12,6 +12,7 @@ import Lembretes from './pages/Lembretes';
 import Consultas from './pages/Consultas';
 import Exames from './pages/Exames';
 import Medicos from './pages/Medicos';
+import Afericoes from './pages/Afericoes';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -61,6 +62,9 @@ function App() {
         } />
         <Route path="/medicamentos-cadastrados" element={
           isLoggedIn ? <MedicamentosCadastrados isLoggedIn={isLoggedIn} handleLogout={handleLogout} /> : <Home isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
+        } />
+        <Route path="/afericoes" element={
+          isLoggedIn ? <Afericoes isLoggedIn={isLoggedIn} handleLogout={handleLogout} /> : <Home isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
         } />
       </Routes>
     </Router>

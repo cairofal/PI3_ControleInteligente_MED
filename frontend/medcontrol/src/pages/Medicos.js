@@ -1,78 +1,50 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 
 function Medicos({ isLoggedIn, handleLogout }) {
-  const [medicos, setMedicos] = useState([]);
-  const [especialidades, setEspecialidades] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
+  
+  // Estado para simular o "banco de dados" de médicos
+  const [medicos, setMedicos] = useState([
+    {
+      id: 1,
+      nome: 'Dr. Carlos Andrade',
+      crm: 'SP123456',
+      especialidade: 'Cardiologia',
+      telefone: '(11) 98765-4321',
+      email: 'carlos.andrade@clinica.com',
+      endereco: 'Av. Paulista, 1000, São Paulo - SP'
+    },
+    {
+      id: 2,
+      nome: 'Dra. Ana Paula Silva',
+      crm: 'SP654321',
+      especialidade: 'Dermatologia',
+      telefone: '(11) 91234-5678',
+      email: 'ana.silva@clinica.com',
+      endereco: 'R. Oscar Freire, 2000, São Paulo - SP'
+    }
+  ]);
+
   const [formData, setFormData] = useState({
     nome: '',
     crm: '',
+    especialidade: '',
     telefone: '',
     email: '',
-    especialidades: []
+    endereco: ''
   });
+  
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Lista padrão de especialidades médicas
-  const especialidadesPadrao = [
-    'Clínico Geral',
-    'Cardiologia',
-    'Dermatologia',
-    'Endocrinologia',
-    'Gastroenterologia',
-    'Ginecologia',
-    'Neurologia',
-    'Oftalmologia',
-    'Ortopedia',
-    'Pediatria',
-    'Psiquiatria',
-    'Urologia',
-    'Oncologia',
-    'Reumatologia',
-    'Otorrinolaringologia'
-  ];
-
-  useEffect(() => {
-    fetchMedicos();
-    fetchEspecialidades();
-  }, []);
-
-  const fetchMedicos = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/medicos`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setMedicos(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Erro ao buscar médicos:', error);
-      setError('Erro ao carregar médicos');
-      setLoading(false);
-    }
-  };
-
-  const fetchEspecialidades = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/especialidades`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setEspecialidades(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar especialidades, usando lista padrão:', error);
-      setEspecialidades(especialidadesPadrao);
-    }
-  };
+  // Filtrar médicos conforme termo de busca
+  const filteredMedicos = medicos.filter(medico =>
+    medico.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    medico.crm.includes(searchTerm) ||
+    medico.especialidade.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -82,123 +54,94 @@ function Medicos({ isLoggedIn, handleLogout }) {
     });
   };
 
-  const handleEspecialidadeChange = (e) => {
-    const { value, checked } = e.target;
-    let novasEspecialidades = [...formData.especialidades];
-    
-    if (checked) {
-      novasEspecialidades.push(value);
-    } else {
-      novasEspecialidades = novasEspecialidades.filter(esp => esp !== value);
-    }
-    
-    setFormData({
-      ...formData,
-      especialidades: novasEspecialidades
-    });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      
-      // Verifica se pelo menos uma especialidade foi selecionada
-      if (formData.especialidades.length === 0) {
-        setError('Selecione pelo menos uma especialidade');
-        return;
-      }
-      
-      if (editingId) {
-        // Atualizar médico existente
-        await axios.put(`${API_BASE_URL}/medicos/${editingId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      } else {
-        // Criar novo médico
-        await axios.post(`${API_BASE_URL}/medicos`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      }
-      
-      // Resetar formulário e recarregar lista
-      setShowForm(false);
-      setFormData({
-        nome: '',
-        crm: '',
-        telefone: '',
-        email: '',
-        especialidades: []
-      });
-      setEditingId(null);
-      fetchMedicos();
-      setError(null);
-    } catch (error) {
-      console.error('Erro ao salvar médico:', error);
-      setError('Erro ao salvar médico');
+    
+    // Validação simples
+    if (!formData.nome || !formData.crm || !formData.especialidade || !formData.telefone) {
+      alert('Preencha os campos obrigatórios: Nome, CRM, Especialidade e Telefone');
+      return;
     }
+
+    if (editingId) {
+      // Atualizar médico existente
+      setMedicos(medicos.map(medico => 
+        medico.id === editingId ? { ...formData, id: editingId } : medico
+      ));
+    } else {
+      // Criar novo médico
+      const novoMedico = {
+        ...formData,
+        id: medicos.length > 0 ? Math.max(...medicos.map(m => m.id)) + 1 : 1
+      };
+      setMedicos([...medicos, novoMedico]);
+    }
+    
+    // Resetar formulário
+    setFormData({
+      nome: '',
+      crm: '',
+      especialidade: '',
+      telefone: '',
+      email: '',
+      endereco: ''
+    });
+    setEditingId(null);
   };
 
   const handleEdit = (medico) => {
     setFormData({
       nome: medico.nome,
       crm: medico.crm,
+      especialidade: medico.especialidade,
       telefone: medico.telefone,
       email: medico.email,
-      especialidades: medico.especialidades || []
+      endereco: medico.endereco
     });
     setEditingId(medico.id);
-    setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (window.confirm('Tem certeza que deseja excluir este médico?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${API_BASE_URL}/medicos/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        fetchMedicos();
-      } catch (error) {
-        console.error('Erro ao excluir médico:', error);
-        setError('Erro ao excluir médico');
-      }
+      setMedicos(medicos.filter(medico => medico.id !== id));
     }
+  };
+
+  // Função para formatar CRM (ex: SP123456 -> SP-123456)
+  const formatCRM = (crm) => {
+    if (!crm) return '';
+    // Adiciona hífen após 2 caracteres (para CRMs no formato UF123456)
+    return crm.length > 2 ? `${crm.slice(0, 2)}-${crm.slice(2)}` : crm;
   };
 
   return (
     <div>
       <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <main style={styles.main}>
-        <h1 style={styles.title}>Cadastro de Médicos</h1>
-        
-        <button 
-          style={styles.addButton}
-          onClick={() => {
-            setShowForm(!showForm);
-            if (showForm) {
-              setEditingId(null);
-              setFormData({
-                nome: '',
-                crm: '',
-                telefone: '',
-                email: '',
-                especialidades: []
-              });
-            }
-          }}
-        >
-          {showForm ? 'Cancelar' : '+ Adicionar Médico'}
-        </button>
+        <div style={styles.headerContainer}>
+          <h1 style={styles.title}>Cadastro de Médicos</h1>
+          <button 
+            style={styles.backButton}
+            onClick={() => navigate('/dashboard')}
+          >
+            Voltar ao Dashboard
+          </button>
+        </div>
 
-        {showForm && (
-          <form style={styles.form} onSubmit={handleSubmit}>
+        {/* Barra de busca */}
+        <div style={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Buscar médico por nome, CRM ou especialidade..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={styles.searchInput}
+          />
+        </div>
+
+        {/* Formulário de cadastro */}
+        <form style={styles.form} onSubmit={handleSubmit}>
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Nome Completo:</label>
               <input
@@ -208,7 +151,7 @@ function Medicos({ isLoggedIn, handleLogout }) {
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="Ex: Dr. João da Silva"
+                placeholder="Dr. Nome Sobrenome"
               />
             </div>
             
@@ -221,7 +164,22 @@ function Medicos({ isLoggedIn, handleLogout }) {
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="Número de registro no CRM"
+                placeholder="UF123456"
+              />
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Especialidade:</label>
+              <input
+                type="text"
+                name="especialidade"
+                value={formData.especialidade}
+                onChange={handleInputChange}
+                style={styles.input}
+                required
+                placeholder="Ex: Cardiologia"
               />
             </div>
             
@@ -237,72 +195,83 @@ function Medicos({ isLoggedIn, handleLogout }) {
                 placeholder="(00) 00000-0000"
               />
             </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Email:</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                style={styles.input}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Especialidades:</label>
-              <div style={styles.especialidadesContainer}>
-                {especialidades.map((especialidade) => (
-                  <div key={especialidade} style={styles.especialidadeItem}>
-                    <input
-                      type="checkbox"
-                      id={`esp-${especialidade}`}
-                      value={especialidade}
-                      checked={formData.especialidades.includes(especialidade)}
-                      onChange={handleEspecialidadeChange}
-                      style={styles.checkbox}
-                    />
-                    <label htmlFor={`esp-${especialidade}`} style={styles.especialidadeLabel}>
-                      {especialidade}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Email:</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              style={styles.input}
+              placeholder="exemplo@clinica.com"
+            />
+          </div>
+          
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Endereço Profissional:</label>
+            <input
+              type="text"
+              name="endereco"
+              value={formData.endereco}
+              onChange={handleInputChange}
+              style={styles.input}
+              placeholder="Rua, número, cidade - UF"
+            />
+          </div>
+          
+          <div style={styles.formActions}>
             <button type="submit" style={styles.submitButton}>
               {editingId ? 'Atualizar' : 'Cadastrar'}
             </button>
-          </form>
-        )}
+            {editingId && (
+              <button 
+                type="button"
+                style={styles.cancelButton}
+                onClick={() => {
+                  setFormData({
+                    nome: '',
+                    crm: '',
+                    especialidade: '',
+                    telefone: '',
+                    email: '',
+                    endereco: ''
+                  });
+                  setEditingId(null);
+                }}
+              >
+                Cancelar Edição
+              </button>
+            )}
+          </div>
+        </form>
 
-        {error && <p style={styles.error}>{error}</p>}
-
-        {loading ? (
-          <p>Carregando...</p>
-        ) : (
-          <div style={styles.tableContainer}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>CRM</th>
-                  <th>Telefone</th>
-                  <th>Especialidades</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {medicos.length > 0 ? (
-                  medicos.map((medico) => (
+        {/* Lista dinâmica de médicos */}
+        <div style={styles.listContainer}>
+          <h2 style={styles.listTitle}>Médicos Cadastrados</h2>
+          
+          {filteredMedicos.length > 0 ? (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>CRM</th>
+                    <th>Especialidade</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMedicos.map((medico) => (
                     <tr key={medico.id}>
-                      <td>Dr. {medico.nome}</td>
-                      <td>{medico.crm}</td>
+                      <td>{medico.nome}</td>
+                      <td>{formatCRM(medico.crm)}</td>
+                      <td>{medico.especialidade}</td>
                       <td>{medico.telefone}</td>
-                      <td>
-                        {medico.especialidades?.join(', ') || 'Nenhuma especialidade cadastrada'}
-                      </td>
+                      <td>{medico.email || '-'}</td>
                       <td style={styles.actions}>
                         <button 
                           style={styles.editButton}
@@ -318,46 +287,63 @@ function Medicos({ isLoggedIn, handleLogout }) {
                         </button>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" style={styles.noData}>Nenhum médico cadastrado</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={styles.noResults}>
+              {searchTerm ? 'Nenhum médico encontrado' : 'Nenhum médico cadastrado'}
+            </p>
+          )}
+        </div>
       </main>
     </div>
   );
 }
 
-// Estilos
+// Estilos (os mesmos do exemplo Pacientes.js com pequenos ajustes)
 const styles = {
   main: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '2rem',
   },
+  headerContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
   title: {
     fontSize: '2rem',
-    marginBottom: '1.5rem',
     color: '#282c34',
+    margin: 0,
   },
-  addButton: {
-    backgroundColor: '#4CAF50',
+  backButton: {
+    backgroundColor: '#6c757d',
     color: 'white',
     border: 'none',
-    padding: '10px 15px',
+    padding: '8px 15px',
     borderRadius: '4px',
     cursor: 'pointer',
-    marginBottom: '20px',
-    fontSize: '1rem',
-    fontWeight: 'bold',
+    fontSize: '0.9rem',
     '&:hover': {
-      backgroundColor: '#45a049',
+      backgroundColor: '#5a6268',
     },
+  },
+  searchContainer: {
+    marginBottom: '1.5rem',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '10px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    fontSize: '1rem',
+    maxWidth: '500px',
   },
   form: {
     backgroundColor: '#f9f9f9',
@@ -366,7 +352,13 @@ const styles = {
     marginBottom: '20px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
+  formRow: {
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '15px',
+  },
   formGroup: {
+    flex: 1,
     marginBottom: '15px',
   },
   label: {
@@ -382,25 +374,10 @@ const styles = {
     borderRadius: '4px',
     fontSize: '1rem',
   },
-  especialidadesContainer: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '10px',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    maxHeight: '200px',
-    overflowY: 'auto',
-  },
-  especialidadeItem: {
+  formActions: {
     display: 'flex',
-    alignItems: 'center',
-  },
-  checkbox: {
-    marginRight: '8px',
-  },
-  especialidadeLabel: {
-    cursor: 'pointer',
+    gap: '1rem',
+    marginTop: '1rem',
   },
   submitButton: {
     backgroundColor: '#2196F3',
@@ -414,11 +391,27 @@ const styles = {
       backgroundColor: '#0b7dda',
     },
   },
-  error: {
-    color: 'red',
-    margin: '10px 0',
+  cancelButton: {
+    backgroundColor: '#6c757d',
+    color: 'white',
+    border: 'none',
+    padding: '10px 15px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    '&:hover': {
+      backgroundColor: '#5a6268',
+    },
   },
-  tableContainer: {
+  listContainer: {
+    marginTop: '2rem',
+  },
+  listTitle: {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
+    color: '#282c34',
+  },
+  tableWrapper: {
     overflowX: 'auto',
   },
   table: {
@@ -467,10 +460,12 @@ const styles = {
       backgroundColor: '#d32f2f',
     },
   },
-  noData: {
+  noResults: {
     textAlign: 'center',
     padding: '20px',
     color: '#777',
+    backgroundColor: '#f9f9f9',
+    borderRadius: '4px',
   },
 };
 

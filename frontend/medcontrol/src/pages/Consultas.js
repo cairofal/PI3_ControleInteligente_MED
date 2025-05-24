@@ -1,59 +1,50 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 
 function Consultas({ isLoggedIn, handleLogout }) {
-  const [consultas, setConsultas] = useState([]);
-  const [medicos, setMedicos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
+  
+  // Estado para simular o "banco de dados" de consultas
+  const [consultas, setConsultas] = useState([
+    {
+      id: 1,
+      paciente: 'João Silva',
+      medico: 'Dr. Carlos Andrade',
+      especialidade: 'Cardiologia',
+      data: '2023-06-15',
+      hora: '14:00',
+      observacoes: 'Trazer exames recentes'
+    },
+    {
+      id: 2,
+      paciente: 'Maria Oliveira',
+      medico: 'Dra. Ana Paula',
+      especialidade: 'Dermatologia',
+      data: '2023-06-20',
+      hora: '10:30',
+      observacoes: 'Avaliação de manchas na pele'
+    }
+  ]);
+
   const [formData, setFormData] = useState({
-    medicoId: '',
-    dataHora: '',
-    descricao: '',
-    local: '',
+    paciente: '',
+    medico: '',
     especialidade: '',
-    status: 'agendada'
+    data: '',
+    hora: '',
+    observacoes: ''
   });
+  
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchConsultas();
-    fetchMedicos();
-  }, []);
-
-  const fetchConsultas = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/consultas`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setConsultas(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Erro ao buscar consultas:', error);
-      setError('Erro ao carregar consultas');
-      setLoading(false);
-    }
-  };
-
-  const fetchMedicos = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/medicos`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setMedicos(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar médicos:', error);
-    }
-  };
+  // Filtrar consultas conforme termo de busca
+  const filteredConsultas = consultas.filter(consulta =>
+    consulta.paciente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    consulta.medico.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    consulta.especialidade.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -63,151 +54,127 @@ function Consultas({ isLoggedIn, handleLogout }) {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (editingId) {
-        // Atualizar consulta existente
-        await axios.put(`${API_BASE_URL}/consultas/${editingId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      } else {
-        // Criar nova consulta
-        await axios.post(`${API_BASE_URL}/consultas`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      }
-      
-      // Resetar formulário e recarregar lista
-      setShowForm(false);
-      setFormData({
-        medicoId: '',
-        dataHora: '',
-        descricao: '',
-        local: '',
-        especialidade: '',
-        status: 'agendada'
-      });
-      setEditingId(null);
-      fetchConsultas();
-    } catch (error) {
-      console.error('Erro ao salvar consulta:', error);
-      setError('Erro ao salvar consulta');
+    
+    // Validação simples
+    if (!formData.paciente || !formData.medico || !formData.especialidade || !formData.data || !formData.hora) {
+      alert('Preencha os campos obrigatórios: Paciente, Médico, Especialidade, Data e Hora');
+      return;
     }
+
+    if (editingId) {
+      // Atualizar consulta existente
+      setConsultas(consultas.map(consulta => 
+        consulta.id === editingId ? { ...formData, id: editingId } : consulta
+      ));
+    } else {
+      // Criar nova consulta
+      const novaConsulta = {
+        ...formData,
+        id: consultas.length > 0 ? Math.max(...consultas.map(c => c.id)) + 1 : 1
+      };
+      setConsultas([...consultas, novaConsulta]);
+    }
+    
+    // Resetar formulário
+    setFormData({
+      paciente: '',
+      medico: '',
+      especialidade: '',
+      data: '',
+      hora: '',
+      observacoes: ''
+    });
+    setEditingId(null);
   };
 
   const handleEdit = (consulta) => {
     setFormData({
-      medicoId: consulta.medicoId,
-      dataHora: consulta.dataHora.slice(0, 16), // Ajuste para input datetime-local
-      descricao: consulta.descricao,
-      local: consulta.local,
+      paciente: consulta.paciente,
+      medico: consulta.medico,
       especialidade: consulta.especialidade,
-      status: consulta.status
+      data: consulta.data,
+      hora: consulta.hora,
+      observacoes: consulta.observacoes
     });
     setEditingId(consulta.id);
-    setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja cancelar esta consulta?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${API_BASE_URL}/consultas/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        fetchConsultas();
-      } catch (error) {
-        console.error('Erro ao cancelar consulta:', error);
-        setError('Erro ao cancelar consulta');
-      }
+  const handleDelete = (id) => {
+    if (window.confirm('Tem certeza que deseja excluir esta consulta?')) {
+      setConsultas(consultas.filter(consulta => consulta.id !== id));
     }
   };
 
-  const handleStatusChange = async (id, novoStatus) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(`${API_BASE_URL}/consultas/${id}/status`, 
-        { status: novoStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-      fetchConsultas();
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      setError('Erro ao atualizar status da consulta');
-    }
+  // Funções auxiliares para formatação
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  // Função para verificar se a consulta está no passado
+  const isPastConsulta = (dataConsulta) => {
+    const hoje = new Date();
+    const dataCons = new Date(dataConsulta);
+    return dataCons < hoje;
   };
 
   return (
     <div>
       <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <main style={styles.main}>
-        <h1 style={styles.title}>Agenda de Consultas</h1>
-        
-        <button 
-          style={styles.addButton}
-          onClick={() => {
-            setShowForm(!showForm);
-            if (showForm) {
-              setEditingId(null);
-              setFormData({
-                medicoId: '',
-                dataHora: '',
-                descricao: '',
-                local: '',
-                especialidade: '',
-                status: 'agendada'
-              });
-            }
-          }}
-        >
-          {showForm ? 'Cancelar' : '+ Agendar Consulta'}
-        </button>
+        <div style={styles.headerContainer}>
+          <h1 style={styles.title}>Agendamento de Consultas</h1>
+          <button 
+            style={styles.backButton}
+            onClick={() => navigate('/dashboard')}
+          >
+            Voltar ao Dashboard
+          </button>
+        </div>
 
-        {showForm && (
-          <form style={styles.form} onSubmit={handleSubmit}>
+        {/* Barra de busca */}
+        <div style={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Buscar consulta por paciente, médico ou especialidade..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={styles.searchInput}
+          />
+        </div>
+
+        {/* Formulário de cadastro */}
+        <form style={styles.form} onSubmit={handleSubmit}>
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Médico:</label>
-              <select
-                name="medicoId"
-                value={formData.medicoId}
-                onChange={handleInputChange}
-                style={styles.input}
-                required
-              >
-                <option value="">Selecione um médico</option>
-                {medicos.map((medico) => (
-                  <option key={medico.id} value={medico.id}>
-                    Dr. {medico.nome} ({medico.especialidade})
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Data e Hora:</label>
+              <label style={styles.label}>Paciente:</label>
               <input
-                type="datetime-local"
-                name="dataHora"
-                value={formData.dataHora}
+                type="text"
+                name="paciente"
+                value={formData.paciente}
                 onChange={handleInputChange}
                 style={styles.input}
                 required
               />
             </div>
             
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Médico:</label>
+              <input
+                type="text"
+                name="medico"
+                value={formData.medico}
+                onChange={handleInputChange}
+                style={styles.input}
+                required
+              />
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Especialidade:</label>
               <input
@@ -217,165 +184,176 @@ function Consultas({ isLoggedIn, handleLogout }) {
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="Ex: Cardiologia, Dermatologia"
               />
             </div>
             
             <div style={styles.formGroup}>
-              <label style={styles.label}>Local:</label>
+              <label style={styles.label}>Data:</label>
               <input
-                type="text"
-                name="local"
-                value={formData.local}
+                type="date"
+                name="data"
+                value={formData.data}
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="Ex: Hospital X, Sala 203"
               />
             </div>
-            
+          </div>
+
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Descrição:</label>
-              <textarea
-                name="descricao"
-                value={formData.descricao}
-                onChange={handleInputChange}
-                style={{...styles.input, minHeight: '80px'}}
-                placeholder="Motivo da consulta, sintomas, etc."
-              />
-            </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Status:</label>
-              <select
-                name="status"
-                value={formData.status}
+              <label style={styles.label}>Hora:</label>
+              <input
+                type="time"
+                name="hora"
+                value={formData.hora}
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-              >
-                <option value="agendada">Agendada</option>
-                <option value="confirmada">Confirmada</option>
-                <option value="realizada">Realizada</option>
-                <option value="cancelada">Cancelada</option>
-              </select>
+              />
             </div>
-            
+          </div>
+          
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Observações:</label>
+            <textarea
+              name="observacoes"
+              value={formData.observacoes}
+              onChange={handleInputChange}
+              style={{ ...styles.input, minHeight: '80px' }}
+            />
+          </div>
+          
+          <div style={styles.formActions}>
             <button type="submit" style={styles.submitButton}>
               {editingId ? 'Atualizar' : 'Agendar'}
             </button>
-          </form>
-        )}
-
-        {error && <p style={styles.error}>{error}</p>}
-
-        {loading ? (
-          <p>Carregando...</p>
-        ) : (
-          <div style={styles.tableContainer}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th>Médico</th>
-                  <th>Data/Hora</th>
-                  <th>Especialidade</th>
-                  <th>Local</th>
-                  <th>Status</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {consultas.length > 0 ? (
-                  consultas.map((consulta) => {
-                    const medico = medicos.find(m => m.id === consulta.medicoId);
-                    return (
-                      <tr key={consulta.id}>
-                        <td>Dr. {medico?.nome || 'Médico não encontrado'}</td>
-                        <td>{new Date(consulta.dataHora).toLocaleString()}</td>
-                        <td>{consulta.especialidade}</td>
-                        <td>{consulta.local}</td>
-                        <td>
-                          <select
-                            value={consulta.status}
-                            onChange={(e) => handleStatusChange(consulta.id, e.target.value)}
-                            style={{
-                              ...styles.statusSelect,
-                              backgroundColor: getStatusColor(consulta.status)
-                            }}
-                          >
-                            <option value="agendada">Agendada</option>
-                            <option value="confirmada">Confirmada</option>
-                            <option value="realizada">Realizada</option>
-                            <option value="cancelada">Cancelada</option>
-                          </select>
-                        </td>
-                        <td style={styles.actions}>
-                          <button 
-                            style={styles.editButton}
-                            onClick={() => handleEdit(consulta)}
-                          >
-                            Editar
-                          </button>
-                          <button 
-                            style={styles.deleteButton}
-                            onClick={() => handleDelete(consulta.id)}
-                          >
-                            Cancelar
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="6" style={styles.noData}>Nenhuma consulta agendada</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            {editingId && (
+              <button 
+                type="button"
+                style={styles.cancelButton}
+                onClick={() => {
+                  setFormData({
+                    paciente: '',
+                    medico: '',
+                    especialidade: '',
+                    data: '',
+                    hora: '',
+                    observacoes: ''
+                  });
+                  setEditingId(null);
+                }}
+              >
+                Cancelar Edição
+              </button>
+            )}
           </div>
-        )}
+        </form>
+
+        {/* Lista dinâmica de consultas */}
+        <div style={styles.listContainer}>
+          <h2 style={styles.listTitle}>Consultas Agendadas</h2>
+          
+          {filteredConsultas.length > 0 ? (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Paciente</th>
+                    <th>Médico</th>
+                    <th>Especialidade</th>
+                    <th>Data/Hora</th>
+                    <th>Observações</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredConsultas.map((consulta) => (
+                    <tr 
+                      key={consulta.id} 
+                      style={isPastConsulta(consulta.data) ? styles.pastConsulta : styles.futureConsulta}
+                    >
+                      <td>{consulta.paciente}</td>
+                      <td>{consulta.medico}</td>
+                      <td>{consulta.especialidade}</td>
+                      <td>{formatDate(consulta.data)} às {consulta.hora}</td>
+                      <td>{consulta.observacoes || '-'}</td>
+                      <td>
+                        {isPastConsulta(consulta.data) ? 'Realizada' : 'Agendada'}
+                      </td>
+                      <td style={styles.actions}>
+                        <button 
+                          style={styles.editButton}
+                          onClick={() => handleEdit(consulta)}
+                        >
+                          Editar
+                        </button>
+                        <button 
+                          style={styles.deleteButton}
+                          onClick={() => handleDelete(consulta.id)}
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={styles.noResults}>
+              {searchTerm ? 'Nenhuma consulta encontrada' : 'Nenhuma consulta agendada'}
+            </p>
+          )}
+        </div>
       </main>
     </div>
   );
 }
 
-// Função auxiliar para cores de status
-const getStatusColor = (status) => {
-  switch(status) {
-    case 'agendada': return '#FFF3CD';
-    case 'confirmada': return '#D1ECF1';
-    case 'realizada': return '#D4EDDA';
-    case 'cancelada': return '#F8D7DA';
-    default: return '#F8F9FA';
-  }
-};
-
-// Estilos
+// Estilos (adaptados do exemplo anterior com adições)
 const styles = {
   main: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '2rem',
   },
+  headerContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
   title: {
     fontSize: '2rem',
-    marginBottom: '1.5rem',
     color: '#282c34',
+    margin: 0,
   },
-  addButton: {
-    backgroundColor: '#4CAF50',
+  backButton: {
+    backgroundColor: '#6c757d',
     color: 'white',
     border: 'none',
-    padding: '10px 15px',
+    padding: '8px 15px',
     borderRadius: '4px',
     cursor: 'pointer',
-    marginBottom: '20px',
-    fontSize: '1rem',
-    fontWeight: 'bold',
+    fontSize: '0.9rem',
     '&:hover': {
-      backgroundColor: '#45a049',
+      backgroundColor: '#5a6268',
     },
+  },
+  searchContainer: {
+    marginBottom: '1.5rem',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '10px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    fontSize: '1rem',
+    maxWidth: '500px',
   },
   form: {
     backgroundColor: '#f9f9f9',
@@ -384,7 +362,13 @@ const styles = {
     marginBottom: '20px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
+  formRow: {
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '15px',
+  },
   formGroup: {
+    flex: 1,
     marginBottom: '15px',
   },
   label: {
@@ -400,11 +384,10 @@ const styles = {
     borderRadius: '4px',
     fontSize: '1rem',
   },
-  statusSelect: {
-    padding: '5px',
-    borderRadius: '4px',
-    border: '1px solid #ddd',
-    cursor: 'pointer',
+  formActions: {
+    display: 'flex',
+    gap: '1rem',
+    marginTop: '1rem',
   },
   submitButton: {
     backgroundColor: '#2196F3',
@@ -418,11 +401,27 @@ const styles = {
       backgroundColor: '#0b7dda',
     },
   },
-  error: {
-    color: 'red',
-    margin: '10px 0',
+  cancelButton: {
+    backgroundColor: '#6c757d',
+    color: 'white',
+    border: 'none',
+    padding: '10px 15px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    '&:hover': {
+      backgroundColor: '#5a6268',
+    },
   },
-  tableContainer: {
+  listContainer: {
+    marginTop: '2rem',
+  },
+  listTitle: {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
+    color: '#282c34',
+  },
+  tableWrapper: {
     overflowX: 'auto',
   },
   table: {
@@ -439,11 +438,12 @@ const styles = {
     backgroundColor: '#f2f2f2',
     fontWeight: 'bold',
   },
-  'table tr:nth-child(even)': {
-    backgroundColor: '#f9f9f9',
+  pastConsulta: {
+    backgroundColor: 'rgba(211, 211, 211, 0.3)',
+    color: '#666',
   },
-  'table tr:hover': {
-    backgroundColor: '#f1f1f1',
+  futureConsulta: {
+    backgroundColor: 'rgba(144, 238, 144, 0.3)',
   },
   actions: {
     display: 'flex',
@@ -471,10 +471,12 @@ const styles = {
       backgroundColor: '#d32f2f',
     },
   },
-  noData: {
+  noResults: {
     textAlign: 'center',
     padding: '20px',
     color: '#777',
+    backgroundColor: '#f9f9f9',
+    borderRadius: '4px',
   },
 };
 

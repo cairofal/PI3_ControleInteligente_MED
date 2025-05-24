@@ -1,5 +1,6 @@
 import Header from '../components/Header';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 function Dashboard({ isLoggedIn, handleLogout, user }) {
   const navigate = useNavigate();
@@ -53,11 +54,11 @@ function Dashboard({ isLoggedIn, handleLogout, user }) {
       path: '/medicamentos-cadastrados'
     },
     {
-        id: 8,
-        title: 'Anotações',
-        icon: '📋',
-        path: '/medicamentos-cadastrados'
-      }
+    id: 8,
+    title: 'Aferir Glicemia e Pressão',
+    icon: '🩸',
+    path: '/afericoes'
+  }
   ];
 
   const handleCardClick = (path) => {
@@ -71,8 +72,8 @@ function Dashboard({ isLoggedIn, handleLogout, user }) {
     <div>
       <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <main style={styles.main}>
-        <h1 style={styles.title}>Bem-vindo, {user?.email}!</h1>
-        <p style={styles.subtitle}>Controle Inteligente de Medicamentos</p>
+        <h1 style={styles.title}>Bem-vindo {user?.email}!</h1>
+        <p style={styles.subtitle}>Controle Inteligente de Tratamentos Médicos</p>
         
         <div style={styles.gridContainer}>
           {features.map((feature) => (

@@ -1,94 +1,53 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 
 function Exames({ isLoggedIn, handleLogout }) {
-  const [exames, setExames] = useState([]);
-  const [medicos, setMedicos] = useState([]);
-  const [tiposExame, setTiposExame] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
+  
+  // Estado para simular o "banco de dados" de exames
+  const [exames, setExames] = useState([
+    {
+      id: 1,
+      tipo: 'Hemograma completo',
+      paciente: 'João Silva',
+      data: '2023-06-15',
+      hora: '08:00',
+      local: 'Laboratório ABC',
+      medicoSolicitante: 'Dr. Carlos Andrade',
+      observacoes: 'Jejum de 8 horas'
+    },
+    {
+      id: 2,
+      tipo: 'Ressonância Magnética',
+      paciente: 'Maria Oliveira',
+      data: '2023-06-20',
+      hora: '14:30',
+      local: 'Clínica de Imagens XYZ',
+      medicoSolicitante: 'Dra. Ana Paula',
+      observacoes: 'Trazer exames anteriores'
+    }
+  ]);
+
   const [formData, setFormData] = useState({
-    medicoId: '',
-    tipoExame: '',
-    dataHora: '',
+    tipo: '',
+    paciente: '',
+    data: '',
+    hora: '',
     local: '',
-    preparo: '',
-    status: 'agendado',
-    resultado: ''
+    medicoSolicitante: '',
+    observacoes: ''
   });
+  
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchExames();
-    fetchMedicos();
-    fetchTiposExame();
-  }, []);
-
-  const fetchExames = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/exames`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setExames(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Erro ao buscar exames:', error);
-      setError('Erro ao carregar exames');
-      setLoading(false);
-    }
-  };
-
-  const fetchMedicos = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/medicos`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setMedicos(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar médicos:', error);
-    }
-  };
-
-  const fetchTiposExame = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/tipos-exame`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setTiposExame(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar tipos de exame:', error);
-      // Caso o endpoint não exista, usar uma lista padrão
-      setTiposExame([
-        'Hemograma completo',
-        'Glicemia em jejum',
-        'Colesterol total e frações',
-        'Triglicerídeos',
-        'TSH e T4 livre',
-        'Urina tipo I',
-        'Ureia e creatinina',
-        'TGO/AST e TGP/ALT',
-        'PSA',
-        'Eletrocardiograma',
-        'Ecocardiograma',
-        'Ultrassonografia',
-        'Ressonância magnética',
-        'Tomografia computadorizada',
-        'Raio-X'
-      ]);
-    }
-  };
+  // Filtrar exames conforme termo de busca
+  const filteredExames = exames.filter(exame =>
+    exame.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    exame.paciente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    exame.local.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -98,190 +57,155 @@ function Exames({ isLoggedIn, handleLogout }) {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (editingId) {
-        // Atualizar exame existente
-        await axios.put(`${API_BASE_URL}/exames/${editingId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      } else {
-        // Criar novo exame
-        await axios.post(`${API_BASE_URL}/exames`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      }
-      
-      // Resetar formulário e recarregar lista
-      setShowForm(false);
-      setFormData({
-        medicoId: '',
-        tipoExame: '',
-        dataHora: '',
-        local: '',
-        preparo: '',
-        status: 'agendado',
-        resultado: ''
-      });
-      setEditingId(null);
-      fetchExames();
-    } catch (error) {
-      console.error('Erro ao salvar exame:', error);
-      setError('Erro ao salvar exame');
+    
+    // Validação simples
+    if (!formData.tipo || !formData.paciente || !formData.data || !formData.hora || !formData.local) {
+      alert('Preencha os campos obrigatórios: Tipo, Paciente, Data, Hora e Local');
+      return;
     }
+
+    if (editingId) {
+      // Atualizar exame existente
+      setExames(exames.map(exame => 
+        exame.id === editingId ? { ...formData, id: editingId } : exame
+      ));
+    } else {
+      // Criar novo exame
+      const novoExame = {
+        ...formData,
+        id: exames.length > 0 ? Math.max(...exames.map(e => e.id)) + 1 : 1
+      };
+      setExames([...exames, novoExame]);
+    }
+    
+    // Resetar formulário
+    setFormData({
+      tipo: '',
+      paciente: '',
+      data: '',
+      hora: '',
+      local: '',
+      medicoSolicitante: '',
+      observacoes: ''
+    });
+    setEditingId(null);
   };
 
   const handleEdit = (exame) => {
     setFormData({
-      medicoId: exame.medicoId,
-      tipoExame: exame.tipoExame,
-      dataHora: exame.dataHora.slice(0, 16), // Ajuste para input datetime-local
+      tipo: exame.tipo,
+      paciente: exame.paciente,
+      data: exame.data,
+      hora: exame.hora,
       local: exame.local,
-      preparo: exame.preparo,
-      status: exame.status,
-      resultado: exame.resultado
+      medicoSolicitante: exame.medicoSolicitante,
+      observacoes: exame.observacoes
     });
     setEditingId(exame.id);
-    setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja cancelar este exame?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${API_BASE_URL}/exames/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        fetchExames();
-      } catch (error) {
-        console.error('Erro ao cancelar exame:', error);
-        setError('Erro ao cancelar exame');
-      }
+  const handleDelete = (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este exame?')) {
+      setExames(exames.filter(exame => exame.id !== id));
     }
   };
 
-  const handleStatusChange = async (id, novoStatus) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(`${API_BASE_URL}/exames/${id}/status`, 
-        { status: novoStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-      fetchExames();
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      setError('Erro ao atualizar status do exame');
-    }
+  // Funções auxiliares para formatação
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
   };
 
-  const handleResultadoChange = async (id, resultado) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(`${API_BASE_URL}/exames/${id}/resultado`, 
-        { resultado },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-      fetchExames();
-    } catch (error) {
-      console.error('Erro ao atualizar resultado:', error);
-      setError('Erro ao atualizar resultado do exame');
-    }
+  // Função para verificar se o exame está no passado
+  const isPastExame = (dataExame) => {
+    const hoje = new Date();
+    const dataEx = new Date(dataExame);
+    return dataEx < hoje;
   };
 
   return (
     <div>
       <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <main style={styles.main}>
-        <h1 style={styles.title}>Agenda de Exames</h1>
-        
-        <button 
-          style={styles.addButton}
-          onClick={() => {
-            setShowForm(!showForm);
-            if (showForm) {
-              setEditingId(null);
-              setFormData({
-                medicoId: '',
-                tipoExame: '',
-                dataHora: '',
-                local: '',
-                preparo: '',
-                status: 'agendado',
-                resultado: ''
-              });
-            }
-          }}
-        >
-          {showForm ? 'Cancelar' : '+ Agendar Exame'}
-        </button>
+        <div style={styles.headerContainer}>
+          <h1 style={styles.title}>Agendamento de Exames</h1>
+          <button 
+            style={styles.backButton}
+            onClick={() => navigate('/dashboard')}
+          >
+            Voltar ao Dashboard
+          </button>
+        </div>
 
-        {showForm && (
-          <form style={styles.form} onSubmit={handleSubmit}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Médico Solicitante:</label>
-              <select
-                name="medicoId"
-                value={formData.medicoId}
-                onChange={handleInputChange}
-                style={styles.input}
-                required
-              >
-                <option value="">Selecione um médico</option>
-                {medicos.map((medico) => (
-                  <option key={medico.id} value={medico.id}>
-                    Dr. {medico.nome} ({medico.especialidade})
-                  </option>
-                ))}
-              </select>
-            </div>
-            
+        {/* Barra de busca */}
+        <div style={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Buscar exame por tipo, paciente ou local..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={styles.searchInput}
+          />
+        </div>
+
+        {/* Formulário de cadastro */}
+        <form style={styles.form} onSubmit={handleSubmit}>
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Tipo de Exame:</label>
               <input
-                list="tiposExame"
-                name="tipoExame"
-                value={formData.tipoExame}
+                type="text"
+                name="tipo"
+                value={formData.tipo}
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="Digite ou selecione o tipo de exame"
               />
-              <datalist id="tiposExame">
-                {tiposExame.map((tipo, index) => (
-                  <option key={index} value={tipo} />
-                ))}
-              </datalist>
             </div>
             
             <div style={styles.formGroup}>
-              <label style={styles.label}>Data e Hora:</label>
+              <label style={styles.label}>Paciente:</label>
               <input
-                type="datetime-local"
-                name="dataHora"
-                value={formData.dataHora}
+                type="text"
+                name="paciente"
+                value={formData.paciente}
+                onChange={handleInputChange}
+                style={styles.input}
+                required
+              />
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Data:</label>
+              <input
+                type="date"
+                name="data"
+                value={formData.data}
                 onChange={handleInputChange}
                 style={styles.input}
                 required
               />
             </div>
             
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Hora:</label>
+              <input
+                type="time"
+                name="hora"
+                value={formData.hora}
+                onChange={handleInputChange}
+                style={styles.input}
+                required
+              />
+            </div>
+          </div>
+
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Local:</label>
               <input
@@ -291,173 +215,162 @@ function Exames({ isLoggedIn, handleLogout }) {
                 onChange={handleInputChange}
                 style={styles.input}
                 required
-                placeholder="Ex: Laboratório X, Hospital Y"
               />
             </div>
             
             <div style={styles.formGroup}>
-              <label style={styles.label}>Preparo:</label>
-              <textarea
-                name="preparo"
-                value={formData.preparo}
-                onChange={handleInputChange}
-                style={{...styles.input, minHeight: '80px'}}
-                placeholder="Jejum de 8 horas, suspender medicamento X, etc."
-              />
-            </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Status:</label>
-              <select
-                name="status"
-                value={formData.status}
+              <label style={styles.label}>Médico Solicitante:</label>
+              <input
+                type="text"
+                name="medicoSolicitante"
+                value={formData.medicoSolicitante}
                 onChange={handleInputChange}
                 style={styles.input}
-                required
-              >
-                <option value="agendado">Agendado</option>
-                <option value="realizado">Realizado</option>
-                <option value="cancelado">Cancelado</option>
-              </select>
+              />
             </div>
-            
-            {formData.status === 'realizado' && (
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Resultado:</label>
-                <textarea
-                  name="resultado"
-                  value={formData.resultado}
-                  onChange={handleInputChange}
-                  style={{...styles.input, minHeight: '80px'}}
-                  placeholder="Descrição do resultado ou laudo"
-                />
-              </div>
-            )}
-            
+          </div>
+          
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Observações/Preparação:</label>
+            <textarea
+              name="observacoes"
+              value={formData.observacoes}
+              onChange={handleInputChange}
+              style={{ ...styles.input, minHeight: '80px' }}
+            />
+          </div>
+          
+          <div style={styles.formActions}>
             <button type="submit" style={styles.submitButton}>
               {editingId ? 'Atualizar' : 'Agendar'}
             </button>
-          </form>
-        )}
-
-        {error && <p style={styles.error}>{error}</p>}
-
-        {loading ? (
-          <p>Carregando...</p>
-        ) : (
-          <div style={styles.tableContainer}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th>Tipo de Exame</th>
-                  <th>Médico</th>
-                  <th>Data/Hora</th>
-                  <th>Local</th>
-                  <th>Status</th>
-                  <th>Resultado</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {exames.length > 0 ? (
-                  exames.map((exame) => {
-                    const medico = medicos.find(m => m.id === exame.medicoId);
-                    return (
-                      <tr key={exame.id}>
-                        <td>{exame.tipoExame}</td>
-                        <td>Dr. {medico?.nome || 'Médico não encontrado'}</td>
-                        <td>{new Date(exame.dataHora).toLocaleString()}</td>
-                        <td>{exame.local}</td>
-                        <td>
-                          <select
-                            value={exame.status}
-                            onChange={(e) => handleStatusChange(exame.id, e.target.value)}
-                            style={{
-                              ...styles.statusSelect,
-                              backgroundColor: getStatusColor(exame.status)
-                            }}
-                          >
-                            <option value="agendado">Agendado</option>
-                            <option value="realizado">Realizado</option>
-                            <option value="cancelado">Cancelado</option>
-                          </select>
-                        </td>
-                        <td>
-                          {exame.status === 'realizado' ? (
-                            <textarea
-                              value={exame.resultado || ''}
-                              onChange={(e) => handleResultadoChange(exame.id, e.target.value)}
-                              style={{...styles.resultadoInput, minHeight: '50px'}}
-                              placeholder="Adicionar resultado"
-                            />
-                          ) : '-'}
-                        </td>
-                        <td style={styles.actions}>
-                          <button 
-                            style={styles.editButton}
-                            onClick={() => handleEdit(exame)}
-                          >
-                            Editar
-                          </button>
-                          <button 
-                            style={styles.deleteButton}
-                            onClick={() => handleDelete(exame.id)}
-                          >
-                            Cancelar
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="7" style={styles.noData}>Nenhum exame agendado</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            {editingId && (
+              <button 
+                type="button"
+                style={styles.cancelButton}
+                onClick={() => {
+                  setFormData({
+                    tipo: '',
+                    paciente: '',
+                    data: '',
+                    hora: '',
+                    local: '',
+                    medicoSolicitante: '',
+                    observacoes: ''
+                  });
+                  setEditingId(null);
+                }}
+              >
+                Cancelar Edição
+              </button>
+            )}
           </div>
-        )}
+        </form>
+
+        {/* Lista dinâmica de exames */}
+        <div style={styles.listContainer}>
+          <h2 style={styles.listTitle}>Exames Agendados</h2>
+          
+          {filteredExames.length > 0 ? (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Paciente</th>
+                    <th>Data/Hora</th>
+                    <th>Local</th>
+                    <th>Médico</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredExames.map((exame) => (
+                    <tr 
+                      key={exame.id} 
+                      style={isPastExame(exame.data) ? styles.pastExame : styles.futureExame}
+                    >
+                      <td>{exame.tipo}</td>
+                      <td>{exame.paciente}</td>
+                      <td>{formatDate(exame.data)} às {exame.hora}</td>
+                      <td>{exame.local}</td>
+                      <td>{exame.medicoSolicitante || '-'}</td>
+                      <td>
+                        {isPastExame(exame.data) ? 'Realizado' : 'Agendado'}
+                      </td>
+                      <td style={styles.actions}>
+                        <button 
+                          style={styles.editButton}
+                          onClick={() => handleEdit(exame)}
+                        >
+                          Editar
+                        </button>
+                        <button 
+                          style={styles.deleteButton}
+                          onClick={() => handleDelete(exame.id)}
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={styles.noResults}>
+              {searchTerm ? 'Nenhum exame encontrado' : 'Nenhum exame agendado'}
+            </p>
+          )}
+        </div>
       </main>
     </div>
   );
 }
 
-// Função auxiliar para cores de status
-const getStatusColor = (status) => {
-  switch(status) {
-    case 'agendado': return '#FFF3CD';
-    case 'realizado': return '#D4EDDA';
-    case 'cancelado': return '#F8D7DA';
-    default: return '#F8F9FA';
-  }
-};
-
-// Estilos
+// Estilos (adaptados do exemplo anterior com adições)
 const styles = {
   main: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '2rem',
   },
+  headerContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
   title: {
     fontSize: '2rem',
-    marginBottom: '1.5rem',
     color: '#282c34',
+    margin: 0,
   },
-  addButton: {
-    backgroundColor: '#4CAF50',
+  backButton: {
+    backgroundColor: '#6c757d',
     color: 'white',
     border: 'none',
-    padding: '10px 15px',
+    padding: '8px 15px',
     borderRadius: '4px',
     cursor: 'pointer',
-    marginBottom: '20px',
-    fontSize: '1rem',
-    fontWeight: 'bold',
+    fontSize: '0.9rem',
     '&:hover': {
-      backgroundColor: '#45a049',
+      backgroundColor: '#5a6268',
     },
+  },
+  searchContainer: {
+    marginBottom: '1.5rem',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '10px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    fontSize: '1rem',
+    maxWidth: '500px',
   },
   form: {
     backgroundColor: '#f9f9f9',
@@ -466,7 +379,13 @@ const styles = {
     marginBottom: '20px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
+  formRow: {
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '15px',
+  },
   formGroup: {
+    flex: 1,
     marginBottom: '15px',
   },
   label: {
@@ -482,18 +401,10 @@ const styles = {
     borderRadius: '4px',
     fontSize: '1rem',
   },
-  statusSelect: {
-    padding: '5px',
-    borderRadius: '4px',
-    border: '1px solid #ddd',
-    cursor: 'pointer',
-  },
-  resultadoInput: {
-    width: '100%',
-    padding: '8px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '0.9rem',
+  formActions: {
+    display: 'flex',
+    gap: '1rem',
+    marginTop: '1rem',
   },
   submitButton: {
     backgroundColor: '#2196F3',
@@ -507,11 +418,27 @@ const styles = {
       backgroundColor: '#0b7dda',
     },
   },
-  error: {
-    color: 'red',
-    margin: '10px 0',
+  cancelButton: {
+    backgroundColor: '#6c757d',
+    color: 'white',
+    border: 'none',
+    padding: '10px 15px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    '&:hover': {
+      backgroundColor: '#5a6268',
+    },
   },
-  tableContainer: {
+  listContainer: {
+    marginTop: '2rem',
+  },
+  listTitle: {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
+    color: '#282c34',
+  },
+  tableWrapper: {
     overflowX: 'auto',
   },
   table: {
@@ -528,11 +455,12 @@ const styles = {
     backgroundColor: '#f2f2f2',
     fontWeight: 'bold',
   },
-  'table tr:nth-child(even)': {
-    backgroundColor: '#f9f9f9',
+  pastExame: {
+    backgroundColor: 'rgba(211, 211, 211, 0.3)',
+    color: '#666',
   },
-  'table tr:hover': {
-    backgroundColor: '#f1f1f1',
+  futureExame: {
+    backgroundColor: 'rgba(144, 238, 144, 0.3)',
   },
   actions: {
     display: 'flex',
@@ -560,10 +488,12 @@ const styles = {
       backgroundColor: '#d32f2f',
     },
   },
-  noData: {
+  noResults: {
     textAlign: 'center',
     padding: '20px',
     color: '#777',
+    backgroundColor: '#f9f9f9',
+    borderRadius: '4px',
   },
 };
 

@@ -1,13 +1,32 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 
 function Pacientes({ isLoggedIn, handleLogout }) {
-  const [pacientes, setPacientes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
+  
+  // Estado para simular o "banco de dados" de pacientes
+  const [pacientes, setPacientes] = useState([
+    {
+      id: 1,
+      nome: 'João Silva',
+      cpf: '12345678901',
+      dataNascimento: '1980-05-15',
+      telefone: '11987654321',
+      email: 'joao@exemplo.com',
+      endereco: 'Rua das Flores, 123'
+    },
+    {
+      id: 2,
+      nome: 'Maria Oliveira',
+      cpf: '98765432109',
+      dataNascimento: '1990-08-20',
+      telefone: '21912345678',
+      email: 'maria@exemplo.com',
+      endereco: 'Av. Paulista, 1000'
+    }
+  ]);
+
   const [formData, setFormData] = useState({
     nome: '',
     cpf: '',
@@ -16,28 +35,15 @@ function Pacientes({ isLoggedIn, handleLogout }) {
     email: '',
     endereco: ''
   });
+  
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchPacientes();
-  }, []);
-
-  const fetchPacientes = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/pacientes`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setPacientes(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Erro ao buscar pacientes:', error);
-      setError('Erro ao carregar pacientes');
-      setLoading(false);
-    }
-  };
+  // Filtrar pacientes conforme termo de busca
+  const filteredPacientes = pacientes.filter(paciente =>
+    paciente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    paciente.cpf.includes(searchTerm)
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -47,43 +53,39 @@ function Pacientes({ isLoggedIn, handleLogout }) {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (editingId) {
-        // Atualizar paciente existente
-        await axios.put(`${API_BASE_URL}/pacientes/${editingId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      } else {
-        // Criar novo paciente
-        await axios.post(`${API_BASE_URL}/pacientes`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      }
-      
-      // Resetar formulário e recarregar lista
-      setShowForm(false);
-      setFormData({
-        nome: '',
-        cpf: '',
-        dataNascimento: '',
-        telefone: '',
-        email: '',
-        endereco: ''
-      });
-      setEditingId(null);
-      fetchPacientes();
-    } catch (error) {
-      console.error('Erro ao salvar paciente:', error);
-      setError('Erro ao salvar paciente');
+    
+    // Validação simples
+    if (!formData.nome || !formData.cpf || !formData.dataNascimento || !formData.telefone) {
+      alert('Preencha os campos obrigatórios: Nome, CPF, Data de Nascimento e Telefone');
+      return;
     }
+
+    if (editingId) {
+      // Atualizar paciente existente
+      setPacientes(pacientes.map(paciente => 
+        paciente.id === editingId ? { ...formData, id: editingId } : paciente
+      ));
+    } else {
+      // Criar novo paciente
+      const novoPaciente = {
+        ...formData,
+        id: pacientes.length > 0 ? Math.max(...pacientes.map(p => p.id)) + 1 : 1
+      };
+      setPacientes([...pacientes, novoPaciente]);
+    }
+    
+    // Resetar formulário
+    setFormData({
+      nome: '',
+      cpf: '',
+      dataNascimento: '',
+      telefone: '',
+      email: '',
+      endereco: ''
+    });
+    setEditingId(null);
   };
 
   const handleEdit = (paciente) => {
@@ -96,56 +98,67 @@ function Pacientes({ isLoggedIn, handleLogout }) {
       endereco: paciente.endereco
     });
     setEditingId(paciente.id);
-    setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (window.confirm('Tem certeza que deseja excluir este paciente?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${API_BASE_URL}/pacientes/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        fetchPacientes();
-      } catch (error) {
-        console.error('Erro ao excluir paciente:', error);
-        setError('Erro ao excluir paciente');
-      }
+      setPacientes(pacientes.filter(paciente => paciente.id !== id));
     }
+  };
+
+  // Funções auxiliares para formatação
+  const formatCPF = (cpf) => {
+    if (!cpf) return '';
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const formatPhone = (phone) => {
+    if (!phone) return '';
+    // Formatação para (00) 00000-0000
+    const cleaned = phone.replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{2})(\d{5})(\d{4})$/);
+    if (match) {
+      return `(${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    return phone;
   };
 
   return (
     <div>
       <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <main style={styles.main}>
-        <h1 style={styles.title}>Cadastro de Pacientes</h1>
-        
-        <button 
-          style={styles.addButton}
-          onClick={() => {
-            setShowForm(!showForm);
-            if (showForm) {
-              setEditingId(null);
-              setFormData({
-                nome: '',
-                cpf: '',
-                dataNascimento: '',
-                telefone: '',
-                email: '',
-                endereco: ''
-              });
-            }
-          }}
-        >
-          {showForm ? 'Cancelar' : '+ Adicionar Paciente'}
-        </button>
+        <div style={styles.headerContainer}>
+          <h1 style={styles.title}>Cadastro de Pacientes</h1>
+          <button 
+            style={styles.backButton}
+            onClick={() => navigate('/dashboard')}
+          >
+            Voltar ao Dashboard
+          </button>
+        </div>
 
-        {showForm && (
-          <form style={styles.form} onSubmit={handleSubmit}>
+        {/* Barra de busca */}
+        <div style={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Buscar paciente por nome ou CPF..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={styles.searchInput}
+          />
+        </div>
+
+        {/* Formulário de cadastro */}
+        <form style={styles.form} onSubmit={handleSubmit}>
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Nome:</label>
+              <label style={styles.label}>Nome Completo:</label>
               <input
                 type="text"
                 name="nome"
@@ -165,9 +178,12 @@ function Pacientes({ isLoggedIn, handleLogout }) {
                 onChange={handleInputChange}
                 style={styles.input}
                 required
+                placeholder="000.000.000-00"
               />
             </div>
-            
+          </div>
+
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Data de Nascimento:</label>
               <input
@@ -189,61 +205,84 @@ function Pacientes({ isLoggedIn, handleLogout }) {
                 onChange={handleInputChange}
                 style={styles.input}
                 required
+                placeholder="(00) 00000-0000"
               />
             </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Email:</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                style={styles.input}
-              />
-            </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Endereço:</label>
-              <input
-                type="text"
-                name="endereco"
-                value={formData.endereco}
-                onChange={handleInputChange}
-                style={styles.input}
-              />
-            </div>
-            
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Email:</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              style={styles.input}
+            />
+          </div>
+          
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Endereço:</label>
+            <input
+              type="text"
+              name="endereco"
+              value={formData.endereco}
+              onChange={handleInputChange}
+              style={styles.input}
+            />
+          </div>
+          
+          <div style={styles.formActions}>
             <button type="submit" style={styles.submitButton}>
               {editingId ? 'Atualizar' : 'Cadastrar'}
             </button>
-          </form>
-        )}
+            {editingId && (
+              <button 
+                type="button"
+                style={styles.cancelButton}
+                onClick={() => {
+                  setFormData({
+                    nome: '',
+                    cpf: '',
+                    dataNascimento: '',
+                    telefone: '',
+                    email: '',
+                    endereco: ''
+                  });
+                  setEditingId(null);
+                }}
+              >
+                Cancelar Edição
+              </button>
+            )}
+          </div>
+        </form>
 
-        {error && <p style={styles.error}>{error}</p>}
-
-        {loading ? (
-          <p>Carregando...</p>
-        ) : (
-          <div style={styles.tableContainer}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>CPF</th>
-                  <th>Nascimento</th>
-                  <th>Telefone</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pacientes.length > 0 ? (
-                  pacientes.map((paciente) => (
+        {/* Lista dinâmica de pacientes */}
+        <div style={styles.listContainer}>
+          <h2 style={styles.listTitle}>Pacientes Cadastrados</h2>
+          
+          {filteredPacientes.length > 0 ? (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>Nascimento</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPacientes.map((paciente) => (
                     <tr key={paciente.id}>
                       <td>{paciente.nome}</td>
-                      <td>{paciente.cpf}</td>
-                      <td>{new Date(paciente.dataNascimento).toLocaleDateString()}</td>
-                      <td>{paciente.telefone}</td>
+                      <td>{formatCPF(paciente.cpf)}</td>
+                      <td>{formatDate(paciente.dataNascimento)}</td>
+                      <td>{formatPhone(paciente.telefone)}</td>
+                      <td>{paciente.email || '-'}</td>
                       <td style={styles.actions}>
                         <button 
                           style={styles.editButton}
@@ -259,46 +298,63 @@ function Pacientes({ isLoggedIn, handleLogout }) {
                         </button>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" style={styles.noData}>Nenhum paciente cadastrado</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={styles.noResults}>
+              {searchTerm ? 'Nenhum paciente encontrado' : 'Nenhum paciente cadastrado'}
+            </p>
+          )}
+        </div>
       </main>
     </div>
   );
 }
 
-// Estilos
+// Estilos (os mesmos do exemplo anterior)
 const styles = {
   main: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '2rem',
   },
+  headerContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
   title: {
     fontSize: '2rem',
-    marginBottom: '1.5rem',
     color: '#282c34',
+    margin: 0,
   },
-  addButton: {
-    backgroundColor: '#4CAF50',
+  backButton: {
+    backgroundColor: '#6c757d',
     color: 'white',
     border: 'none',
-    padding: '10px 15px',
+    padding: '8px 15px',
     borderRadius: '4px',
     cursor: 'pointer',
-    marginBottom: '20px',
-    fontSize: '1rem',
-    fontWeight: 'bold',
+    fontSize: '0.9rem',
     '&:hover': {
-      backgroundColor: '#45a049',
+      backgroundColor: '#5a6268',
     },
+  },
+  searchContainer: {
+    marginBottom: '1.5rem',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '10px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    fontSize: '1rem',
+    maxWidth: '500px',
   },
   form: {
     backgroundColor: '#f9f9f9',
@@ -307,7 +363,13 @@ const styles = {
     marginBottom: '20px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
+  formRow: {
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '15px',
+  },
   formGroup: {
+    flex: 1,
     marginBottom: '15px',
   },
   label: {
@@ -323,6 +385,11 @@ const styles = {
     borderRadius: '4px',
     fontSize: '1rem',
   },
+  formActions: {
+    display: 'flex',
+    gap: '1rem',
+    marginTop: '1rem',
+  },
   submitButton: {
     backgroundColor: '#2196F3',
     color: 'white',
@@ -335,11 +402,27 @@ const styles = {
       backgroundColor: '#0b7dda',
     },
   },
-  error: {
-    color: 'red',
-    margin: '10px 0',
+  cancelButton: {
+    backgroundColor: '#6c757d',
+    color: 'white',
+    border: 'none',
+    padding: '10px 15px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    '&:hover': {
+      backgroundColor: '#5a6268',
+    },
   },
-  tableContainer: {
+  listContainer: {
+    marginTop: '2rem',
+  },
+  listTitle: {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
+    color: '#282c34',
+  },
+  tableWrapper: {
     overflowX: 'auto',
   },
   table: {
@@ -388,10 +471,12 @@ const styles = {
       backgroundColor: '#d32f2f',
     },
   },
-  noData: {
+  noResults: {
     textAlign: 'center',
     padding: '20px',
     color: '#777',
+    backgroundColor: '#f9f9f9',
+    borderRadius: '4px',
   },
 };
 

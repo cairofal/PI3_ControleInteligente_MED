@@ -1,13 +1,34 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 
 function Medicamentos({ isLoggedIn, handleLogout }) {
-  const [medicamentos, setMedicamentos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
+  
+  // Estado para simular o "banco de dados" de medicamentos
+  const [medicamentos, setMedicamentos] = useState([
+    {
+      id: 1,
+      nome: 'Paracetamol',
+      principioAtivo: 'Paracetamol',
+      dosagem: '500mg',
+      formaFarmaceutica: 'comprimido',
+      laboratorio: 'EMS',
+      indicacoes: 'Dor e febre',
+      contraIndicacoes: 'Hipersensibilidade ao paracetamol'
+    },
+    {
+      id: 2,
+      nome: 'Ibuprofeno',
+      principioAtivo: 'Ibuprofeno',
+      dosagem: '400mg',
+      formaFarmaceutica: 'comprimido',
+      laboratorio: 'Eurofarma',
+      indicacoes: 'Inflamação, dor e febre',
+      contraIndicacoes: 'Úlcera gastroduodenal, insuficiência renal'
+    }
+  ]);
+
   const [formData, setFormData] = useState({
     nome: '',
     principioAtivo: '',
@@ -17,7 +38,9 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
     indicacoes: '',
     contraIndicacoes: ''
   });
+  
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Opções para o dropdown de forma farmacêutica
   const formasFarmaceuticas = [
@@ -32,26 +55,11 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
     'supositório'
   ];
 
-  useEffect(() => {
-    fetchMedicamentos();
-  }, []);
-
-  const fetchMedicamentos = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/medicamentos`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setMedicamentos(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Erro ao buscar medicamentos:', error);
-      setError('Erro ao carregar medicamentos');
-      setLoading(false);
-    }
-  };
+  // Filtrar medicamentos conforme termo de busca
+  const filteredMedicamentos = medicamentos.filter(medicamento =>
+    medicamento.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (medicamento.principioAtivo && medicamento.principioAtivo.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -61,44 +69,40 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      
-      if (editingId) {
-        // Atualizar medicamento existente
-        await axios.put(`${API_BASE_URL}/medicamentos/${editingId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      } else {
-        // Criar novo medicamento
-        await axios.post(`${API_BASE_URL}/medicamentos`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      }
-      
-      // Resetar formulário e recarregar lista
-      setShowForm(false);
-      setFormData({
-        nome: '',
-        principioAtivo: '',
-        dosagem: '',
-        formaFarmaceutica: 'comprimido',
-        laboratorio: '',
-        indicacoes: '',
-        contraIndicacoes: ''
-      });
-      setEditingId(null);
-      fetchMedicamentos();
-    } catch (error) {
-      console.error('Erro ao salvar medicamento:', error);
-      setError('Erro ao salvar medicamento');
+    
+    // Validação simples
+    if (!formData.nome || !formData.principioAtivo || !formData.dosagem) {
+      alert('Preencha os campos obrigatórios: Nome, Princípio Ativo e Dosagem');
+      return;
     }
+
+    if (editingId) {
+      // Atualizar medicamento existente
+      setMedicamentos(medicamentos.map(medicamento => 
+        medicamento.id === editingId ? { ...formData, id: editingId } : medicamento
+      ));
+    } else {
+      // Criar novo medicamento
+      const novoMedicamento = {
+        ...formData,
+        id: medicamentos.length > 0 ? Math.max(...medicamentos.map(m => m.id)) + 1 : 1
+      };
+      setMedicamentos([...medicamentos, novoMedicamento]);
+    }
+    
+    // Resetar formulário
+    setFormData({
+      nome: '',
+      principioAtivo: '',
+      dosagem: '',
+      formaFarmaceutica: 'comprimido',
+      laboratorio: '',
+      indicacoes: '',
+      contraIndicacoes: ''
+    });
+    setEditingId(null);
   };
 
   const handleEdit = (medicamento) => {
@@ -112,23 +116,11 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
       contraIndicacoes: medicamento.contraIndicacoes
     });
     setEditingId(medicamento.id);
-    setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (window.confirm('Tem certeza que deseja excluir este medicamento?')) {
-      try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`${API_BASE_URL}/medicamentos/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        fetchMedicamentos();
-      } catch (error) {
-        console.error('Erro ao excluir medicamento:', error);
-        setError('Erro ao excluir medicamento');
-      }
+      setMedicamentos(medicamentos.filter(medicamento => medicamento.id !== id));
     }
   };
 
@@ -136,31 +128,30 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
     <div>
       <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <main style={styles.main}>
-        <h1 style={styles.title}>Cadastro de Medicamentos</h1>
-        
-        <button 
-          style={styles.addButton}
-          onClick={() => {
-            setShowForm(!showForm);
-            if (showForm) {
-              setEditingId(null);
-              setFormData({
-                nome: '',
-                principioAtivo: '',
-                dosagem: '',
-                formaFarmaceutica: 'comprimido',
-                laboratorio: '',
-                indicacoes: '',
-                contraIndicacoes: ''
-              });
-            }
-          }}
-        >
-          {showForm ? 'Cancelar' : '+ Adicionar Medicamento'}
-        </button>
+        <div style={styles.headerContainer}>
+          <h1 style={styles.title}>Cadastro de Medicamentos</h1>
+          <button 
+            style={styles.backButton}
+            onClick={() => navigate('/dashboard')}
+          >
+            Voltar ao Dashboard
+          </button>
+        </div>
 
-        {showForm && (
-          <form style={styles.form} onSubmit={handleSubmit}>
+        {/* Barra de busca */}
+        <div style={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Buscar medicamento por nome ou princípio ativo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={styles.searchInput}
+          />
+        </div>
+
+        {/* Formulário de cadastro */}
+        <form style={styles.form} onSubmit={handleSubmit}>
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Nome Comercial:</label>
               <input
@@ -184,7 +175,9 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
                 required
               />
             </div>
-            
+          </div>
+
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Dosagem:</label>
               <input
@@ -213,18 +206,20 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
                 ))}
               </select>
             </div>
-            
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Laboratório:</label>
-              <input
-                type="text"
-                name="laboratorio"
-                value={formData.laboratorio}
-                onChange={handleInputChange}
-                style={styles.input}
-              />
-            </div>
-            
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Laboratório:</label>
+            <input
+              type="text"
+              name="laboratorio"
+              value={formData.laboratorio}
+              onChange={handleInputChange}
+              style={styles.input}
+            />
+          </div>
+          
+          <div style={styles.formRow}>
             <div style={styles.formGroup}>
               <label style={styles.label}>Indicações:</label>
               <textarea
@@ -244,37 +239,60 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
                 style={{...styles.input, minHeight: '80px'}}
               />
             </div>
-            
+          </div>
+          
+          <div style={styles.formActions}>
             <button type="submit" style={styles.submitButton}>
               {editingId ? 'Atualizar' : 'Cadastrar'}
             </button>
-          </form>
-        )}
+            {editingId && (
+              <button 
+                type="button"
+                style={styles.cancelButton}
+                onClick={() => {
+                  setFormData({
+                    nome: '',
+                    principioAtivo: '',
+                    dosagem: '',
+                    formaFarmaceutica: 'comprimido',
+                    laboratorio: '',
+                    indicacoes: '',
+                    contraIndicacoes: ''
+                  });
+                  setEditingId(null);
+                }}
+              >
+                Cancelar Edição
+              </button>
+            )}
+          </div>
+        </form>
 
-        {error && <p style={styles.error}>{error}</p>}
-
-        {loading ? (
-          <p>Carregando...</p>
-        ) : (
-          <div style={styles.tableContainer}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nome Comercial</th>
-                  <th>Princípio Ativo</th>
-                  <th>Dosagem</th>
-                  <th>Forma</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {medicamentos.length > 0 ? (
-                  medicamentos.map((medicamento) => (
+        {/* Lista dinâmica de medicamentos */}
+        <div style={styles.listContainer}>
+          <h2 style={styles.listTitle}>Medicamentos Cadastrados</h2>
+          
+          {filteredMedicamentos.length > 0 ? (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nome Comercial</th>
+                    <th>Princípio Ativo</th>
+                    <th>Dosagem</th>
+                    <th>Forma</th>
+                    <th>Laboratório</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMedicamentos.map((medicamento) => (
                     <tr key={medicamento.id}>
                       <td>{medicamento.nome}</td>
                       <td>{medicamento.principioAtivo}</td>
                       <td>{medicamento.dosagem}</td>
                       <td>{medicamento.formaFarmaceutica}</td>
+                      <td>{medicamento.laboratorio || '-'}</td>
                       <td style={styles.actions}>
                         <button 
                           style={styles.editButton}
@@ -290,46 +308,63 @@ function Medicamentos({ isLoggedIn, handleLogout }) {
                         </button>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" style={styles.noData}>Nenhum medicamento cadastrado</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p style={styles.noResults}>
+              {searchTerm ? 'Nenhum medicamento encontrado' : 'Nenhum medicamento cadastrado'}
+            </p>
+          )}
+        </div>
       </main>
     </div>
   );
 }
 
-// Estilos (podem ser os mesmos do Pacientes.js com pequenos ajustes)
+// Estilos (similares ao Pacientes.js com pequenos ajustes)
 const styles = {
   main: {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '2rem',
   },
+  headerContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
   title: {
     fontSize: '2rem',
-    marginBottom: '1.5rem',
     color: '#282c34',
+    margin: 0,
   },
-  addButton: {
-    backgroundColor: '#4CAF50',
+  backButton: {
+    backgroundColor: '#6c757d',
     color: 'white',
     border: 'none',
-    padding: '10px 15px',
+    padding: '8px 15px',
     borderRadius: '4px',
     cursor: 'pointer',
-    marginBottom: '20px',
-    fontSize: '1rem',
-    fontWeight: 'bold',
+    fontSize: '0.9rem',
     '&:hover': {
-      backgroundColor: '#45a049',
+      backgroundColor: '#5a6268',
     },
+  },
+  searchContainer: {
+    marginBottom: '1.5rem',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '10px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    fontSize: '1rem',
+    maxWidth: '500px',
   },
   form: {
     backgroundColor: '#f9f9f9',
@@ -338,7 +373,13 @@ const styles = {
     marginBottom: '20px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
+  formRow: {
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '15px',
+  },
   formGroup: {
+    flex: 1,
     marginBottom: '15px',
   },
   label: {
@@ -354,6 +395,11 @@ const styles = {
     borderRadius: '4px',
     fontSize: '1rem',
   },
+  formActions: {
+    display: 'flex',
+    gap: '1rem',
+    marginTop: '1rem',
+  },
   submitButton: {
     backgroundColor: '#2196F3',
     color: 'white',
@@ -366,11 +412,27 @@ const styles = {
       backgroundColor: '#0b7dda',
     },
   },
-  error: {
-    color: 'red',
-    margin: '10px 0',
+  cancelButton: {
+    backgroundColor: '#6c757d',
+    color: 'white',
+    border: 'none',
+    padding: '10px 15px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    '&:hover': {
+      backgroundColor: '#5a6268',
+    },
   },
-  tableContainer: {
+  listContainer: {
+    marginTop: '2rem',
+  },
+  listTitle: {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
+    color: '#282c34',
+  },
+  tableWrapper: {
     overflowX: 'auto',
   },
   table: {
@@ -419,10 +481,12 @@ const styles = {
       backgroundColor: '#d32f2f',
     },
   },
-  noData: {
+  noResults: {
     textAlign: 'center',
     padding: '20px',
     color: '#777',
+    backgroundColor: '#f9f9f9',
+    borderRadius: '4px',
   },
 };
 
