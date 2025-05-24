@@ -1,24 +1,43 @@
-import logo from './medcontrol.png';
-import './App.css';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import Header from './components/Header';
+import LoginForm from './components/LoginForm';
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Controle Inteligente para Tratamento Médico.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Projeto Integrador III - UNIVESP 2025 
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route 
+          path="/" 
+          element={<Home isLoggedIn={isLoggedIn} handleLogout={handleLogout} />} 
+        />
+        <Route 
+          path="/dashboard" 
+          element={<Dashboard isLoggedIn={isLoggedIn} handleLogout={handleLogout} />} 
+        />
+        <Route 
+          path="/login" 
+          element={
+            <>
+              <Header isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
+              <LoginForm handleLogin={handleLogin} />
+            </>
+          } 
+        />
+      </Routes>
+    </Router>
   );
 }
 
